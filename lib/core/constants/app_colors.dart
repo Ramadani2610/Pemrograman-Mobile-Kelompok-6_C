@@ -52,21 +52,21 @@ class AppColors {
   // Key warna departemen
 
   static const Map<String, Color> departmentColors = {
-    'Teknik Sipil': Color(0xFF1E88E5),
-    'Teknik Mesin': Color(0xFFF4511E),
-    'Teknik Perkapalan': Color(0xFF00897B),
-    'Teknik Elektro': Color(0xFFFFB300),
-    'Arsitektur': Color(0xFF8E24AA),
-    'Teknik Geologi': Color(0xFF5D4037),
-    'Teknik Industri': Color(0xFF3949AB),
-    'Teknik Kelautan': Color(0xFF00ACC1),
-    'Teknik Sistem Perkapalan': Color(0xFF6D4C41),
-    'PWK': Color(0xFF7CB342),
-    'Teknik Pertambangan': Color(0xFF6A1B9A),
-    'Teknik Informatika': Color(0xFFEF6C00),
-    'Teknik Lingkungan': Color(0xFF2E7D32),
-    'Teknik Metalurgi dan Material': Color(0xFF757575),
-    'Teknik Geodesi': Color(0xFF00838F),
+    'Teknik Sipil': Color(0xFFFEF100),
+    'Teknik Mesin': Color(0xFF152456),
+    'Teknik Perkapalan': Color(0xFFF07400),
+    'Teknik Elektro': Color(0xFF237618),
+    'Arsitektur': Color(0xFFAAAEB6),
+    'Teknik Geologi': Color(0xFF63330A),
+    'Teknik Industri': Color(0xFFDF0000),
+    'Teknik Kelautan': Color(0xFF86CDF9),
+    'Teknik Sistem Perkapalan': Color(0xFFBE01FE),
+    'PWK': Color(0xFFF0E78D),
+    'Teknik Pertambangan': Color(0xFF974A00),
+    'Teknik Informatika': Color(0xFF2EA7F7),
+    'Teknik Lingkungan': Color(0xFFB1FF99),
+    'Teknik Metalurgi dan Material': Color(0xFFFF6B6D),
+    'Teknik Geodesi': Color(0xFF292824),
 };
 
 /// Ambil warna berdasarkan nama
