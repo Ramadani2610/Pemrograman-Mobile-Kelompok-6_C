@@ -31,8 +31,9 @@ class AppColors {
   /// NEUTRALS
   static const Color titleText = Colors.black;
   static const Color secondaryText = Color(0xFF979797);
+  static const Color border = Color(0xFFDADADA);
 
-  static const Color noButton = Color(0xFFDADADA) ;
+  static const Color noButton = Color(0xFFDADADA);
 
   // STATUS COLOR
   static const Color success = Color(0xFF43A047); // hijau

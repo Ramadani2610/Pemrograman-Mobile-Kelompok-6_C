@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_text_styles.dart';
 
 class GradientWidgets {
   GradientWidgets._();
@@ -129,6 +130,79 @@ class GradientButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           child: buttonContent,
+        ),
+      ),
+    );
+  }
+}
+
+class GradientBorderContainer extends StatelessWidget {
+  final Widget child;
+  final Gradient gradient;
+  final double borderRadius;
+  final double borderWidth;
+  final Color? backgroundColor;
+
+  const GradientBorderContainer({
+    super.key,
+    required this.child,
+    this.gradient = AppColors.mainGradient,
+    this.borderRadius = 12,
+    this.borderWidth = 1.5,
+    this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      padding: EdgeInsets.all(borderWidth),
+      child: Container(
+        decoration: BoxDecoration(
+          color: backgroundColor ?? AppColors.backgroundColor,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class GradientTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final bool obscureText;
+  final TextInputType keyboardType;
+
+  const GradientTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    this.obscureText = false,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GradientBorderContainer(
+      borderRadius: 12,
+      borderWidth: 1.5,
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        style: AppTextStyles.body1,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: AppTextStyles.body2,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 14,
+            horizontal: 16,
+          ),
+          border: InputBorder.none, 
         ),
       ),
     );

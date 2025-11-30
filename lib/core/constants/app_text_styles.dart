@@ -40,6 +40,35 @@ class AppTextStyles {
     height: 38 / 32,
   );
 
+
+  /// Body utama (teks biasa)
+  static const TextStyle body1 = TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 1.4,
+    color: AppColors.titleText,
+  );
+
+  /// Body sekunder (keterangan, teks abu-abu)
+  static const TextStyle body2 = TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    height: 1.4,
+    color: AppColors.secondaryText,
+  );
+
+  /// Caption kecil (tanggal di kalender, catatan kecil)
+  static const TextStyle caption = TextStyle(
+    fontFamily: _fontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 1.3,
+    color: AppColors.secondaryText,
+  );
+
+
   /// Button utama
   static const TextStyle button1 = TextStyle(
     fontFamily: _fontFamily,
