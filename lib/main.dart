@@ -102,10 +102,10 @@ class MyApp extends StatelessWidget {
         ),
       ),
       // --- Definisikan Rute ---
-      initialRoute: '/facilities',
+      initialRoute: '/splash_screen',
       routes: {
         // Panggil kelas widget yang telah diimport dari presentation/auth/
-        '/': (context) => const SplashScreen(), // Splash Screen
+        '/splash_screen': (context) => const SplashScreen(), // Splash Screen
         '/login': (context) => const LoginPage(), // Login Page
         '/home': (context) => const HomePage(), // Home Page
         '/home_user': (context) => const UserHomePage(), // User Home Page
