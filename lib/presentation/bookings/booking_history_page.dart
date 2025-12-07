@@ -212,7 +212,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
         onItemTapped: (index) {
           switch (index) {
             case 0:
-              Navigator.pushNamed(context, '/home_user');
+              Navigator.pushNamed(context, '/home');
               break;
             case 1:
               Navigator.pushNamed(context, '/facilities');

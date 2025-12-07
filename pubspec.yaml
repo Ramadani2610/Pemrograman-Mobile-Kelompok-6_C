@@ -71,6 +71,7 @@ flutter:
   assets:
     - lib/assets/fonts/
     - lib/assets/icons/
+    - lib/assets/calendar_events.json
 
   fonts:
     - family: Poppins

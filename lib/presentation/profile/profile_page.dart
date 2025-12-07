@@ -76,7 +76,7 @@ class ProfilePage extends StatelessWidget {
                             border: Border.all(color: Colors.white, width: 4),
                             image: const DecorationImage(
                               image: AssetImage(
-                                'lib/assets/icons/Logo-Resmi-Unhas-1.png',
+                                'lib/assets/icons/foto-profil.jpg',
                               ),
                               fit: BoxFit.cover,
                             ),
@@ -176,7 +176,7 @@ class ProfilePage extends StatelessWidget {
         onItemTapped: (index) {
           switch (index) {
             case 0:
-              Navigator.pushNamed(context, '/home_user');
+              Navigator.pushNamed(context, '/home');
               break;
             case 1:
               Navigator.pushNamed(context, '/facilities');
