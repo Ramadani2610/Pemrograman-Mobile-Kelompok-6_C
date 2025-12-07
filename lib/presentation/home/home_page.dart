@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-// import kept intentionally for future use if needed
-
-const Color primaryColor = Color(0xFFD32F2F);
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/bottom_nav_bar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,16 +14,19 @@ class _HomePageState extends State<HomePage> {
   bool _showProfileMenu = false;
   final LayerLink _layerLink = LayerLink();
 
+  int _selectedIndex = 0; // <-- untuk BottomNavBar
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundColor, // <-- pakai core
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ====== TOP BAR ======
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -45,15 +48,15 @@ class _HomePageState extends State<HomePage> {
                   ),
                   IconButton(
                     onPressed: () {},
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chat_bubble_outline,
-                      color: Colors.red,
+                      color: AppColors.mainGradientStart, // <-- dari core
                     ),
                   ),
                 ],
               ),
 
-              // Profile Dropdown Menu
+              // ====== PROFILE DROPDOWN ======
               if (_showProfileMenu)
                 CompositedTransformFollower(
                   link: _layerLink,
@@ -65,11 +68,7 @@ class _HomePageState extends State<HomePage> {
                     child: Container(
                       width: 280,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFFD32F2F), Color(0xFFE74C3C)],
-                        ),
+                        gradient: AppColors.mainGradient, // <-- core gradient
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Column(
@@ -95,27 +94,18 @@ class _HomePageState extends State<HomePage> {
                                     children: [
                                       Text(
                                         'Admin',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontFamily: 'Poppins',
-                                            ),
+                                        style: AppTextStyles.body1.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'admin@gmail.com',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: Colors.white.withOpacity(
-                                                0.8,
-                                              ),
-                                              fontFamily: 'Poppins',
-                                            ),
+                                        style: AppTextStyles.caption.copyWith(
+                                          color:
+                                              Colors.white.withOpacity(0.8),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -220,6 +210,8 @@ class _HomePageState extends State<HomePage> {
                 ),
 
               const SizedBox(height: 10),
+
+              // ====== GREETING ======
               GestureDetector(
                 onTap: _showProfileMenu
                     ? () {
@@ -233,28 +225,14 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       TextSpan(
                         text: 'Halo, ',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontFamily: 'Poppins',
-                              color: Colors.black,
-                            ) ??
-                            const TextStyle(
-                              fontSize: 28,
-                              fontFamily: 'Poppins',
-                            ),
+                        style: AppTextStyles.heading1, // <-- core heading
                       ),
                       TextSpan(
                         text: 'Admin!',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontFamily: 'Poppins',
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
-                            ) ??
-                            const TextStyle(
-                              fontSize: 28,
-                              fontFamily: 'Poppins',
-                            ),
+                        style: AppTextStyles.heading1.copyWith(
+                          color: AppColors.mainGradientStart,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),
@@ -263,7 +241,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 18),
 
-              // Stats Card
+              // ====== STATS CARD ======
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -272,9 +250,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(18),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFD32F2F), Color(0xFFFF6B6B)],
-                  ),
+                  gradient: AppColors.mainGradient, // <-- core gradient
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -290,12 +266,11 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 18),
 
-              // Statistik Peminjaman (chart placeholder)
+              // ====== Statistik Peminjaman ======
               Text(
                 'Statistik Peminjaman',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
+                style: AppTextStyles.body1.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 10),
@@ -303,11 +278,11 @@ class _HomePageState extends State<HomePage> {
                 height: 180,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.backgroundColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: AppColors.cardShadow,
                       blurRadius: 8,
                     ),
                   ],
@@ -315,9 +290,8 @@ class _HomePageState extends State<HomePage> {
                 child: Center(
                   child: Text(
                     'Chart Placeholder',
-                    style: TextStyle(
-                      color: Colors.red.shade300,
-                      fontFamily: 'Poppins',
+                    style: AppTextStyles.body2.copyWith(
+                      color: AppColors.mainGradientEnd,
                     ),
                   ),
                 ),
@@ -325,53 +299,60 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 20),
 
-              // Kalender Akademik (simple grid)
+              // ====== Kalender Akademik ======
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Kalender Akademik',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
+                    style: AppTextStyles.body1.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   Text(
                     'November 2025',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(fontFamily: 'Poppins'),
+                    style: AppTextStyles.body2,
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               _buildCalendar(),
+              const SizedBox(height: 12),
 
-              const SizedBox(height: 20),
-
-              // List of items (sample)
+              // ====== Paket Fasilitas ======
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     'Paket Fasilitas',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontFamily: 'Poppins',
+                    style: AppTextStyles.body1.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, '/admin_facilities'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.mainGradient,        
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: TextButton.icon(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/admin_facilities'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        foregroundColor: Colors.white,        
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: Text(
+                        'Kelola',
+                        style: AppTextStyles.button2.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                    icon: const Icon(Icons.edit, size: 16),
-                    label: const Text('Kelola', style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
@@ -388,31 +369,18 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
 
-      // Bottom navigation bar styled similar to the mock
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFD32F2F), Color(0xFFFF6B6B)],
-          ),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: const [
-            Icon(Icons.home, color: Colors.white),
-            Icon(Icons.shopping_basket_outlined, color: Colors.white),
-            Icon(Icons.notifications_none, color: Colors.white),
-            Icon(Icons.receipt_long, color: Colors.white),
-            Icon(Icons.settings, color: Colors.white),
-          ],
-        ),
+      // ====== BOTTOM NAV BAR (pakai widget custom) ======
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: (index) {
+          setState(() => _selectedIndex = index);
+          // TODO: tambahkan navigasi antar page sesuai index
+        },
       ),
     );
   }
+
+  // ================= Helper Widgets (belum diubah banyak) =================
 
   Widget _statItem(String title, String subtitle) {
     return Column(
@@ -420,17 +388,18 @@ class _HomePageState extends State<HomePage> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: AppTextStyles.body1.copyWith(
             color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            fontFamily: 'Poppins',
           ),
         ),
         const SizedBox(height: 6),
         Text(
           subtitle,
-          style: const TextStyle(color: Colors.white70, fontFamily: 'Poppins'),
+          style: AppTextStyles.caption.copyWith(
+            color: Colors.white70,
+          ),
         ),
       ],
     );
@@ -443,71 +412,77 @@ class _HomePageState extends State<HomePage> {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFD32F2F), Color(0xFFFF6B6B)],
-          ),
+          gradient: AppColors.mainGradient, // <-- core gradient
           borderRadius: BorderRadius.circular(8),
         ),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          fontFamily: 'Poppins',
+        style: AppTextStyles.body1.copyWith(
           fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontFamily: 'Poppins', color: Colors.red),
+        style: AppTextStyles.body2.copyWith(
+          color: AppColors.mainGradientStart,
+        ),
       ),
-      trailing: const Icon(Icons.more_horiz, color: Colors.red),
+      trailing: Icon(
+        Icons.more_horiz,
+        color: AppColors.mainGradientStart,
+      ),
     );
   }
 
   Widget _buildCalendar() {
-    // Simple calendar grid (1..30)
-    return SizedBox(
-      height: 220,
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 7,
-          childAspectRatio: 1.1,
-          crossAxisSpacing: 6,
-          mainAxisSpacing: 6,
-        ),
-        itemCount: 35,
-        itemBuilder: (context, index) {
-          // show days 26-30 previous month as empty small squares
-          final day = index - 4; // start from 1 at index 4
-          final bool isActive = day >= 1 && day <= 30;
-          final bool isHighlighted = day == 13 || day == 14;
-          return Container(
-            decoration: BoxDecoration(
-              color: isActive
-                  ? (isHighlighted ? Colors.green : const Color(0xFFD32F2F))
-                  : Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-              gradient: isActive && !isHighlighted
-                  ? const LinearGradient(
-                      colors: [Color(0xFFFF6B6B), Color(0xFFD32F2F)],
-                    )
-                  : null,
-            ),
-            child: Center(
-              child: Text(
-                isActive ? day.toString().padLeft(2, '0') : '',
-                style: TextStyle(
-                  color: isActive ? Colors.white : Colors.black54,
-                  fontFamily: 'Poppins',
-                ),
+    return GridView.builder(
+      shrinkWrap: true, // ⬅️ biar tingginya mengikuti isi
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(top: 4, bottom: 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1.0,
+        crossAxisSpacing: 10,  // jarak antar tanggal
+        mainAxisSpacing: 12,
+      ),
+      itemCount: 35,
+      itemBuilder: (context, index) {
+        final day = index - 4; // start from 1 at index 4
+        final bool isActive = day >= 1 && day <= 30;
+        final bool isHighlighted = day == 13 || day == 14;
+
+        Color? bgColor;
+        Gradient? gradient;
+
+        if (!isActive) {
+          bgColor = Colors.grey[200];
+        } else if (isHighlighted) {
+          bgColor = Colors.green;
+        } else {
+          gradient = AppColors.mainGradient; // tetap pakai gradient brand
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              isActive ? day.toString().padLeft(2, '0') : '',
+              style: AppTextStyles.body2.copyWith(
+                color: isActive ? Colors.white : Colors.black54,
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
+
+  
 
   Widget _buildProfileMenuItem(
     BuildContext context,
@@ -523,13 +498,13 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
+              const Icon(Icons.circle, size: 0), // just to keep alignment? (bisa dihapus kalau mau)
               Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 12),
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: AppTextStyles.body2.copyWith(
                   color: Colors.white,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ],
@@ -546,16 +521,13 @@ class _HomePageState extends State<HomePage> {
         return AlertDialog(
           title: Text(
             'Keluar',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontFamily: 'Poppins',
+            style: AppTextStyles.body1.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
             'Apakah Anda yakin ingin keluar dari aplikasi?',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontFamily: 'Poppins'),
+            style: AppTextStyles.body2,
           ),
           actions: [
             TextButton(
@@ -564,23 +536,23 @@ class _HomePageState extends State<HomePage> {
               },
               child: Text(
                 'Batal',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                style: AppTextStyles.body2.copyWith(
                   color: Colors.grey,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainGradientStart,
+              ),
               onPressed: () {
                 Navigator.pop(context);
                 Navigator.pushReplacementNamed(context, '/login');
               },
               child: Text(
                 'Keluar',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                style: AppTextStyles.button1.copyWith(
                   color: Colors.white,
-                  fontFamily: 'Poppins',
                 ),
               ),
             ),
