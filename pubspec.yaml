@@ -34,6 +34,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.0.15
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
@@ -45,6 +47,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.10.0
+
+# flutter_launcher_icons configuration (top-level)
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "lib/assets/icons/Logo-Resmi-Unhas-1.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "lib/assets/icons/Logo-Resmi-Unhas-1.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -58,20 +69,23 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib\assets\fonts
-    - lib\assets\icons\
+    - lib/assets/fonts/
+    - lib/assets/icons/
 
   fonts:
     - family: Poppins
       fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: lib/assets/fonts/Poppins-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Poppins-Medium.ttf
+        - asset: lib/assets/fonts/Poppins-Medium.ttf
           weight: 500
-        - asset: assets/fonts/Poppins-SemiBold.ttf
+        - asset: lib/assets/fonts/Poppins-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/Poppins-Bold.ttf
+        - asset: lib/assets/fonts/Poppins-Bold.ttf
           weight: 700
+ 
+# Configuration for flutter_launcher_icons (creates Android/iOS launcher icons)
+# Run: `flutter pub get` then `flutter pub run flutter_launcher_icons:main`
 
 
   # To add assets to your application, add an assets section, like this:
