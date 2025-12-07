@@ -1,0 +1,8 @@
+{
+  "events": [
+    { "date": "2025-11-01", "type": "holiday", "title": "Cuti Bersama" },
+    { "date": "2025-11-13", "type": "semester_holiday", "title": "Libur Semester" },
+    { "date": "2025-11-14", "type": "semester_holiday", "title": "Libur Semester" },
+    { "date": "2025-11-25", "type": "exam", "title": "Ujian Tengah Semester" }
+  ]
+}
