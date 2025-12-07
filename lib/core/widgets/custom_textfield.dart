@@ -9,12 +9,8 @@ class CustomTextField extends StatefulWidget {
   final TextInputType keyboardType;
   final IconData? prefixIcon;
 
-  /// errorText: kalau tidak null → border merah + teks error ditampilkan
+  /// kalau tidak null → tampil border merah + text error
   final String? errorText;
-
-  /// path aset untuk icon eye (opsional, default pakai nama di bawah)
-  final String eyeVisibleAsset;
-  final String eyeHiddenAsset;
 
   const CustomTextField({
     super.key,
@@ -24,8 +20,6 @@ class CustomTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.prefixIcon,
     this.errorText,
-    this.eyeVisibleAsset = 'assets/icons/eye_visible.png',
-    this.eyeHiddenAsset = 'assets/icons/eye_hidden.png',
   });
 
   @override
@@ -37,24 +31,31 @@ class _CustomTextFieldState extends State<CustomTextField> {
   bool _hasFocus = false;
 
   @override
+  void initState() {
+    super.initState();
+    // kalau bukan field password, tidak perlu obscure
+    if (!widget.obscureText) {
+      _obscurePassword = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool isPasswordField = widget.obscureText;
-    final bool hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
+    final bool hasError =
+        widget.errorText != null && widget.errorText!.isNotEmpty;
 
-    // Tentukan dekorasi border luar (AnimatedContainer)
+    // tentukan border luar: normal / gradient / error
     Gradient? outerGradient;
     Color? outerColor;
 
     if (hasError) {
-      // PRIORITAS: error → border merah
       outerGradient = null;
       outerColor = AppColors.error;
     } else if (_hasFocus) {
-      // Fokus → border gradient
       outerGradient = AppColors.mainGradient;
       outerColor = null;
     } else {
-      // Default → border abu-abu
       outerGradient = null;
       outerColor = AppColors.border;
     }
@@ -95,7 +96,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                     horizontal: 16,
                   ),
 
-                  // prefix icon (opsional)
+                  // prefix icon opsional
                   prefixIcon: widget.prefixIcon != null
                       ? Icon(
                           widget.prefixIcon,
@@ -105,27 +106,22 @@ class _CustomTextFieldState extends State<CustomTextField> {
                         )
                       : null,
 
-                  // suffix icon: eye toggle pakai aset kalau field password
+                  // 👁 eye toggle pakai Material Icons
                   suffixIcon: isPasswordField
-                      ? GestureDetector(
-                          onTap: () {
+                      ? IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: _hasFocus
+                                ? AppColors.mainGradientStart
+                                : AppColors.secondaryText,
+                          ),
+                          onPressed: () {
                             setState(() {
                               _obscurePassword = !_obscurePassword;
                             });
                           },
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 12),
-                            child: Image.asset(
-                              _obscurePassword
-                                  ? widget.eyeHiddenAsset
-                                  : widget.eyeVisibleAsset,
-                              width: 20,
-                              height: 20,
-                              color: _hasFocus
-                                  ? AppColors.mainGradientStart
-                                  : AppColors.secondaryText,
-                            ),
-                          ),
                         )
                       : null,
                 ),
@@ -134,7 +130,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
           ),
         ),
 
-        // Teks error di bawah field (jika ada)
+        // teks error di bawah field
         if (hasError) ...[
           const SizedBox(height: 4),
           Text(
