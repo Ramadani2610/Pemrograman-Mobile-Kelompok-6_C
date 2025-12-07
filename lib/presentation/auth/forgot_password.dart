@@ -1,287 +1,253 @@
 import 'package:flutter/material.dart';
-
-// Definisikan warna utama (jika tidak diimport dari file lain)
-const Color primaryColor = Color(0xFFD32F2F);
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/custom_textfield.dart';
 
 class ForgotPasswordPage extends StatelessWidget {
   const ForgotPasswordPage({super.key});
-
-  // Helper untuk membuat input field dengan Poppins font
-  Widget _buildTextField(String label) {
-    return TextField(
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontFamily: 'Poppins'),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 15.0,
-          horizontal: 10.0,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.grey, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
-        ),
-      ),
-    );
-  }
-
-  // Helper untuk membuat tombol dengan Poppins font
-  Widget _buildSendEmailButton(String text) {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 5,
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
+    final TextEditingController emailController = TextEditingController();
+
     return Scaffold(
-      body: SingleChildScrollView(
-        child: SizedBox(
-          height: screenHeight,
-          child: Column(
-            children: <Widget>[
-              // --- Bagian Header dengan Gradient ---
-              Container(
-                width: double.infinity,
-                height: screenHeight * 0.25,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [primaryColor, Colors.red.shade400],
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.only(top: screenHeight * 0.05),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Lupa Password?',
-                        style:
-                            Theme.of(
-                              context,
-                            ).textTheme.headlineMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                            ) ??
-                            const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Kami siap membantu Anda',
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withOpacity(0.9),
-                              fontFamily: 'Poppins',
-                            ) ??
-                            TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontFamily: 'Poppins',
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
+      backgroundColor: AppColors.backgroundColor,
+      body: Stack(
+        children: [
+          // ===== BACKGROUND MERAH DENGAN SHAPE MELENGKUNG (SAMA SEPERTI LOGIN) =====
+          ClipPath(
+            clipper: _HeaderClipper(),
+            child: Container(
+              height: screenHeight * 0.5,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: AppColors.mainGradient,
               ),
+            ),
+          ),
 
-              // --- Kartu Reset Password Putih ---
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(30.0),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(40),
-                      topRight: Radius.circular(40),
+          // ===== KONTEN =====
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 60),
+
+                // HEADER: LOGO FULL SPARE DI TENGAH (opsional, sama seperti login)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 24, right: 24),
+                  child: Center(
+                    child: Image.asset(
+                      'lib/assets/icons/logo_no-bg.png', // sesuaikan dengan path Prof
+                      width: 260,
+                      fit: BoxFit.contain,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 15,
-                        spreadRadius: 3,
-                      ),
-                    ],
                   ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          'Reset Password',
-                          style:
-                              Theme.of(
-                                context,
-                              ).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Poppins',
-                              ) ??
-                              const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          'Masukkan email UNHAS Anda untuk menerima kode reset password',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                                fontFamily: 'Poppins',
-                              ) ??
-                              TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                        const SizedBox(height: 30),
+                ),
 
-                        // Input Email
-                        Text(
-                          'Email',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildTextField('Masukkan email UNHAS Anda'),
-                        const SizedBox(height: 30),
+                const SizedBox(height: 16),
 
-                        // Tombol Send Email
-                        _buildSendEmailButton('Kirim Email Reset'),
-
-                        const SizedBox(height: 20),
-
-                        // Divider
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 1,
-                                color: Colors.grey[300],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Text(
-                                'atau',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Colors.grey[600],
-                                      fontFamily: 'Poppins',
-                                    ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                height: 1,
-                                color: Colors.grey[300],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Tombol Kembali ke Login
-                        Center(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text(
-                              'Kembali ke Login',
-                              style:
-                                  Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium?.copyWith(
-                                    color: primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Poppins',
-                                  ) ??
-                                  const TextStyle(
-                                    color: primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Poppins',
-                                  ),
-                            ),
+                // ===== CARD PUTIH (FORM) =====
+                Transform.translate(
+                  offset: const Offset(0, 16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 24,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundColor,
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.nonClassColor,
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
                           ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Informasi tambahan
-                        Container(
-                          padding: const EdgeInsets.all(15),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.info, color: Colors.blue.shade700),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Email reset akan dikirim dalam beberapa menit',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: Colors.blue.shade700,
-                                        fontFamily: 'Poppins',
-                                      ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // === Back row (← Back) di atas kiri ===
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              onPressed: () {
+                                if (Navigator.canPop(context)) {
+                                  Navigator.pop(context);
+                                } else {
+                                  // fallback kalau nanti halaman ini dibuka pakai pushReplacement
+                                  Navigator.pushReplacementNamed(context, '/login');
+                                }
+                              },
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 18,
+                              ),
+                              label: Text(
+                                'Kembali',
+                                style: AppTextStyles.body2.copyWith(
+                                  color: AppColors.secondaryText,
                                 ),
                               ),
-                            ],
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                overlayColor: AppColors.secondaryText.withOpacity(0.1),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+const SizedBox(height: 16),
+
+                          const SizedBox(height: 16),
+
+                          // === Heading center ===
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Lupa Kata Sandi?',
+                                  style: AppTextStyles.heading1,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Masukkan email UNHAS anda\nuntuk melakukan verifikasi!',
+                                  style: AppTextStyles.body2.copyWith(
+                                    color: AppColors.secondaryText,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // Label Email
+                          Text(
+                            'Email',
+                            style: AppTextStyles.body1.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Input Email (pakai CustomTextField)
+                          CustomTextField(
+                            controller: emailController,
+                            label: 'Masukkan email UNHAS Anda',
+                            keyboardType: TextInputType.emailAddress,
+                            prefixIcon: Icons.email_outlined,
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          // Tombol Send Email: gradient seperti login, tapi label "Send Email"
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: AppColors.mainGradient,
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  // TODO: panggil API kirim email reset
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Kirim Email',
+                                  style: AppTextStyles.button1.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // "Didn't get your email?  Resend!"
+                          Center(
+                            child: RichText(
+                              text: TextSpan(
+                                style: AppTextStyles.body2.copyWith(
+                                  color: AppColors.secondaryText,
+                                ),
+                                children: [
+                                  const TextSpan(
+                                    text: "Tidak menerima email? ",
+                                  ),
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.baseline,
+                                    baseline: TextBaseline.alphabetic,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        // TODO: trigger resend
+                                      },
+                                      child: Text(
+                                        'Kirim ulang!',
+                                        style: AppTextStyles.body2.copyWith(
+                                          color: AppColors.mainGradientStart,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+/// Clipper yang sama seperti di halaman Login untuk membentuk curve merah
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    path.lineTo(0, size.height - 80);
+
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height,
+      size.width,
+      size.height - 80,
+    );
+
+    path.lineTo(size.width, 0);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
