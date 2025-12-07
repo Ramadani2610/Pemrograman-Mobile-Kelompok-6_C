@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:spareapp_unhas/data/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const Color primaryColor = Color(0xFFD32F2F);
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
+import '../../core/widgets/custom_textfield.dart';
+import '../../core/widgets/gradient_widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,10 +14,38 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // mulai dari kiri atas
+    path.lineTo(0, size.height - 80);
+
+    // curve ke kanan bawah (melengkung ke bawah di tengah)
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height,
+      size.width,
+      size.height - 80,
+    );
+
+    // lalu ke kanan atas dan tutup
+    path.lineTo(size.width, 0);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+
   bool _rememberMe = false;
   bool _isLoading = false;
 
@@ -83,8 +114,11 @@ class _LoginPageState extends State<LoginPage> {
       // Show error snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['message']),
-          backgroundColor: Colors.red,
+          content: Text(
+            result['message'],
+            style: AppTextStyles.body2.copyWith(color: Colors.white),
+          ),
+          backgroundColor: AppColors.error,
           duration: const Duration(seconds: 3),
         ),
       );
@@ -113,306 +147,212 @@ class _LoginPageState extends State<LoginPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: SizedBox(
-          height: screenHeight,
-          child: Column(
-            children: [
-              // Header dengan SPARE dan Logo UNHAS
-              Container(
-                width: double.infinity,
-                height: screenHeight * 0.45,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [primaryColor, Colors.red.shade300],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo UNHAS utuh
-                      Image.asset(
-                        'lib/assets/icons/Logo-Resmi-Unhas-1.png',
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 120,
-                            height: 120,
-                            color: Colors.white.withOpacity(0.2),
-                            child: const Icon(
-                              Icons.school,
-                              size: 60,
-                              color: Colors.white,
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'SPARE',
-                        style:
-                            Theme.of(context).textTheme.displaySmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                            ) ??
-                            const TextStyle(
-                              color: Colors.white,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Space & Property Allocation & Reservation',
-                        textAlign: TextAlign.center,
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white,
-                              fontFamily: 'Poppins',
-                            ) ??
-                            const TextStyle(
-                              color: Colors.white,
-                              fontFamily: 'Poppins',
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
+      backgroundColor: AppColors.backgroundColor,
+      body: Stack(
+        children: [
+          // ===== BACKGROUND MERAH DENGAN SHAPE MELENGKUNG =====
+          ClipPath(
+            clipper: _HeaderClipper(),
+            child: Container(
+              height: screenHeight * 0.5,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: AppColors.mainGradient,
               ),
+            ),
+          ),
 
-              // Form Card
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(30),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
+          // ===== KONTEN (HEADER + CARD) =====
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 60),
+
+                // ===== HEADER =====
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 24, right: 24),
+                  child: Center(
+                    child: Image.asset(
+                      'lib/assets/icons/logo_no-bg.png', // sesuaikan dengan path Prof
+                      width: 260,
+                      fit: BoxFit.contain,
                     ),
                   ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome!',
-                          style:
-                              Theme.of(
-                                context,
-                              ).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Poppins',
-                              ) ??
-                              const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Please Log In to Your Account',
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Colors.grey[600],
-                                fontFamily: 'Poppins',
-                              ) ??
-                              TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                        const SizedBox(height: 30),
+                ),
 
-                        // Username Field
-                        Text(
-                          'Username',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _usernameController,
-                          decoration: InputDecoration(
-                            hintText: 'Masukkan NIM atau admin1',
-                            hintStyle: const TextStyle(
-                              fontFamily: 'Poppins',
-                              color: Colors.grey,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 0,
-                            ),
-                            border: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey[400]!),
-                            ),
-                            enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey[400]!),
-                            ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 2,
-                              ),
+
+                const SizedBox(height: 24),
+
+                // ===== CARD PUTIH (FORM) =====
+                Transform.translate(
+                  offset: const Offset(0, 16), // sedikit turun dari curve
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 28,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundColor,
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.nonClassColor,
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // === TITLE CENTER: Welcome + subtitle ===
+                          Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Selamat Datang!',
+                                  style: AppTextStyles.heading1,
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Silahkan Masuk ke Akun Anda',
+                                  style: AppTextStyles.body2.copyWith(
+                                    color: AppColors.secondaryText,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
-                          style: const TextStyle(fontFamily: 'Poppins'),
-                        ),
-                        const SizedBox(height: 24),
 
-                        // Password Field
-                        Text(
-                          'Password',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            hintText: 'Masukkan password',
-                            hintStyle: const TextStyle(
-                              fontFamily: 'Poppins',
-                              color: Colors.grey,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 0,
-                            ),
-                            border: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey[400]!),
-                            ),
-                            enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey[400]!),
-                            ),
-                            focusedBorder: const UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: primaryColor,
-                                width: 2,
-                              ),
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
+                          const SizedBox(height: 30),
+
+                          // Username
+                          Text(
+                            'Username',
+                            style: AppTextStyles.body1.copyWith(
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          style: const TextStyle(fontFamily: 'Poppins'),
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 8),
+                          CustomTextField(
+                            controller: _usernameController,
+                            label: 'Masukkan NIM atau admin1',
+                            prefixIcon: Icons.person_outline,
+                          ),
+                          const SizedBox(height: 24),
 
-                        // Remember Me Checkbox
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              activeColor: primaryColor,
-                              onChanged: (val) {
-                                setState(() {
-                                  _rememberMe = val ?? false;
-                                });
-                              },
+                          // Password
+                          Text(
+                            'Kata Sandi',
+                            style: AppTextStyles.body1.copyWith(
+                              fontWeight: FontWeight.w500,
                             ),
-                            Text(
-                              'Remember Me?',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(fontFamily: 'Poppins'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
+                          ),
+                          const SizedBox(height: 8),
+                          CustomTextField(
+                            controller: _passwordController,
+                            label: 'Masukkan kata sandi',
+                            obscureText: true,
+                            prefixIcon: Icons.lock_outline,
+                          ),
+                          const SizedBox(height: 16),
 
-                        // Login Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              disabledBackgroundColor: Colors.grey,
-                              shape: RoundedRectangleBorder(
+                          // Remember Me
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                activeColor: AppColors.mainGradientStart,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _rememberMe = val ?? false;
+                                  });
+                                },
+                              ),
+                              Text(
+                                'Ingat Saya?',
+                                style: AppTextStyles.body2.copyWith(
+                                  color: AppColors.secondaryText,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Login Button (gradient)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: AppColors.mainGradient,
                                 borderRadius: BorderRadius.circular(25),
                               ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    'Log In',
-                                    style:
-                                        Theme.of(
-                                          context,
-                                        ).textTheme.labelLarge?.copyWith(
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _handleLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  disabledBackgroundColor: Colors.grey,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
                                           color: Colors.white,
-                                          fontFamily: 'Poppins',
-                                        ) ??
-                                        const TextStyle(
-                                          color: Colors.white,
-                                          fontFamily: 'Poppins',
+                                          strokeWidth: 2,
                                         ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Forgot Password Link
-                        Center(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/forgot_password');
-                            },
-                            child: Text(
-                              'Forgot Password?',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.grey[600],
-                                    fontFamily: 'Poppins',
-                                  ),
+                                      )
+                                    : Text(
+                                        'Masuk',
+                                        style: AppTextStyles.button1.copyWith(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+
+                          // Forgot Password
+                          Center(
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/forgot_password',
+                                );
+                              },
+                              child: Text(
+                                'Lupa Kata Sandi?',
+                                style: AppTextStyles.body2.copyWith(
+                                  color: AppColors.secondaryText,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+
 }
