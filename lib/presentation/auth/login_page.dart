@@ -41,7 +41,6 @@ class _HeaderClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
-
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -156,9 +155,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(
               height: screenHeight * 0.5,
               width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: AppColors.mainGradient,
-              ),
+              decoration: const BoxDecoration(gradient: AppColors.mainGradient),
             ),
           ),
 
@@ -179,7 +176,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
 
                 const SizedBox(height: 24),
 
@@ -241,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 8),
                           CustomTextField(
                             controller: _usernameController,
-                            label: 'Masukkan NIM atau admin1',
+                            label: 'Masukkan Username',
                             prefixIcon: Icons.person_outline,
                           ),
                           const SizedBox(height: 24),
@@ -354,5 +350,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
 }
