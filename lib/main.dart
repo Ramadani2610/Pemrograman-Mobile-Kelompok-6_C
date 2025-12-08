@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-
 // --- Perubahan di bagian ini: Penyesuaian Import Path ---
 // Sesuaikan import path sesuai dengan lokasi file di folder presentation/auth
 import 'package:spareapp_unhas/presentation/auth/splash_screen.dart';
@@ -19,6 +18,7 @@ import 'package:spareapp_unhas/presentation/facilities/facilities_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/admin_facilities_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/booking_history_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/review_booking.dart';
+import 'package:spareapp_unhas/core/utils/no_animation_route.dart';
 
 // Definisi warna utama (jika belum didefinisikan secara global)
 const Color primaryColor = Color(0xFFD32F2F);
@@ -112,21 +112,48 @@ class MyApp extends StatelessWidget {
       ),
       // --- Definisikan Rute ---
       initialRoute: '/splash_screen',
-      routes: {
-        // Panggil kelas widget yang telah diimport dari presentation/auth/
-        '/splash_screen': (context) => const SplashScreen(), // Splash Screen
-        '/login': (context) => const LoginPage(), // Login Page
-        '/home': (context) => const HomePage(), // Home Page
-        '/home_user': (context) => const UserHomePage(), // User Home Page
-        '/facilities': (context) => const FacilitiesPage(), // Facilities List
-        '/admin_facilities': (context) =>
-            const AdminFacilitiesPage(), // Admin Facilities
-        '/booking_history': (context) =>
-            const BookingHistoryPage(), // Booking History
-        '/forgot_password': (context) =>
-            const ForgotPasswordPage(), // Forgot Password Page
-        '/profile': (context) => const ProfilePage(), // Profile Page
-        '/notification': (context) => const ReviewBookingsPage(), // Notification for Review Booking Page
+      onGenerateRoute: (settings) {
+        Widget page;
+
+        switch (settings.name) {
+          case '/splash_screen':
+            page = const SplashScreen();
+            break;
+          case '/login':
+            page = const LoginPage();
+            break;
+          case '/home':
+            page = const HomePage();
+            break;
+          case '/home_user':
+            page = const UserHomePage();
+            break;
+          case '/facilities':
+            page = const FacilitiesPage();
+            break;
+          case '/admin_facilities':
+            page = const AdminFacilitiesPage();
+            break;
+          case '/booking_history':
+            page = const BookingHistoryPage();
+            break;
+          case '/forgot_password':
+            page = const ForgotPasswordPage();
+            break;
+          case '/profile':
+            page = const ProfilePage();
+            break;
+          case '/notification':
+            page = const ReviewBookingsPage();
+            break;
+          default:
+            page = const SplashScreen();
+        }
+
+        return NoAnimationPageRoute(
+          builder: (context) => page,
+          settings: settings,
+        );
       },
     );
   }
