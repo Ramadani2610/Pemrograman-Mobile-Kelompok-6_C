@@ -319,7 +319,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
         onItemTapped: (index) {
           switch (index) {
             case 0:
-              Navigator.pushNamed(context, '/home_user');
+              Navigator.pushNamed(context, '/home');
               break;
             case 1:
               Navigator.pushNamed(context, '/facilities');
