@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_textfield.dart';
-import '../../core/widgets/gradient_widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,7 +39,6 @@ class _HeaderClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
-
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
@@ -156,9 +154,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(
               height: screenHeight * 0.5,
               width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: AppColors.mainGradient,
-              ),
+              decoration: const BoxDecoration(gradient: AppColors.mainGradient),
             ),
           ),
 
@@ -179,7 +175,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-
 
                 const SizedBox(height: 24),
 
@@ -241,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 8),
                           CustomTextField(
                             controller: _usernameController,
-                            label: 'Masukkan NIM atau admin1',
+                            label: 'Masukkan Username',
                             prefixIcon: Icons.person_outline,
                           ),
                           const SizedBox(height: 24),
@@ -354,5 +349,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
 }

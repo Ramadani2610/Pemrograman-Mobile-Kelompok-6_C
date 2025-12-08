@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spareapp_unhas/core/widgets/bottom_nav_bar.dart';
+import 'package:spareapp_unhas/core/utils/no_animation_route.dart';
 
 const Color primaryColor = Color(0xFFD32F2F);
 
@@ -44,7 +45,10 @@ class ProfilePage extends StatelessWidget {
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
                                 ),
                                 child: const Padding(
                                   padding: EdgeInsets.all(8),
@@ -116,13 +120,12 @@ class ProfilePage extends StatelessWidget {
                 child: Center(
                   child: Text(
                     'Profil',
-                    style: Theme.of(context).textTheme.headlineMedium
-                        ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 28,
-                          fontFamily: 'Poppins',
-                        ),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
                 ),
               ),
@@ -183,7 +186,7 @@ class ProfilePage extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
+                          NoAnimationPageRoute(
                             builder: (context) => const EditProfilePage(),
                           ),
                         );
@@ -247,7 +250,7 @@ class ProfilePage extends StatelessWidget {
             height: 50,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(color: const Color(0xFFE0B0AF)),
               borderRadius: BorderRadius.circular(12),
@@ -338,7 +341,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
                                 ),
                                 child: const Padding(
                                   padding: EdgeInsets.all(8),
@@ -410,13 +416,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 child: Center(
                   child: Text(
                     'Edit Profil',
-                    style: Theme.of(context).textTheme.headlineMedium
-                        ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 28,
-                          fontFamily: 'Poppins',
-                        ),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
                 ),
               ),
