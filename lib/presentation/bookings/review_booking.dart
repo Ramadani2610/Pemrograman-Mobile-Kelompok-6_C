@@ -116,7 +116,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     final room = isClassBooking && booking.roomId != null
         ? _roomsById[booking.roomId]
         : null;
-    final facility = !isClassBooking && booking.facilityId != null
+    final facility = !isClassBooking
         ? _facilitiesById[booking.facilityId]
         : null;
 
@@ -169,7 +169,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
                 ' - ${_timeFormatter.format(booking.endDate)}',
               ),
               if ((booking.purpose ?? '').isNotEmpty)
-                _detailRow('Keperluan', booking.purpose!),
+                _detailRow('Keperluan', booking.purpose),
               if ((booking.quantity ?? 0) > 0)
                 _detailRow('Jumlah', '${booking.quantity} buah'),
               const SizedBox(height: 8),
@@ -405,7 +405,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     final isClassBooking = (booking.roomId ?? '').isNotEmpty;
     final room =
         isClassBooking && booking.roomId != null ? _roomsById[booking.roomId] : null;
-    final facility = !isClassBooking && booking.facilityId != null
+    final facility = !isClassBooking
         ? _facilitiesById[booking.facilityId]
         : null;
 
@@ -515,7 +515,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
                     ),
                     child: Text(
                       (booking.purpose ?? '').isNotEmpty
-                          ? booking.purpose!
+                          ? booking.purpose
                           : (isClassBooking
                               ? 'Kegiatan perkuliahan'
                               : 'Peminjaman fasilitas'),
