@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 // import 'package:firebase_core/firebase_core.dart';
 // import 'package:spareapp_unhas/firebase_options.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+
 
 // --- Perubahan di bagian ini: Penyesuaian Import Path ---
 // Sesuaikan import path sesuai dengan lokasi file di folder presentation/auth
@@ -15,12 +18,18 @@ import 'package:spareapp_unhas/presentation/home/user_home_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/facilities_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/admin_facilities_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/booking_history_page.dart';
+import 'package:spareapp_unhas/presentation/bookings/review_booking.dart';
 
 // Definisi warna utama (jika belum didefinisikan secara global)
 const Color primaryColor = Color(0xFFD32F2F);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Inisialisasi locale Indonesia untuk intl
+  await initializeDateFormatting('id_ID', null);
+  Intl.defaultLocale = 'id_ID'; // optional tapi bagus supaya konsisten
+
+  runApp(const MyApp());
   // Firebase initialization disabled for now due to web compatibility issues
   // Uncomment and properly configure after running: flutter pub global activate flutterfire_cli
   // Then: flutterfire configure --project=spareapp-unhas-dev
@@ -117,6 +126,7 @@ class MyApp extends StatelessWidget {
         '/forgot_password': (context) =>
             const ForgotPasswordPage(), // Forgot Password Page
         '/profile': (context) => const ProfilePage(), // Profile Page
+        '/notification': (context) => const ReviewBookingsPage(), // Notification for Review Booking Page
       },
     );
   }
