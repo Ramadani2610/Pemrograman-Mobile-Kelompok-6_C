@@ -11,7 +11,6 @@ import 'package:spareapp_unhas/presentation/home/user_home_page.dart';
 import 'package:spareapp_unhas/presentation/profile/profile_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/facilities_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/admin_facilities_page.dart';
-import 'package:spareapp_unhas/presentation/facilities/admin_manage_facilities_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/facility_detail_tabs_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/booking_history_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/review_booking.dart';
@@ -114,7 +113,7 @@ class MyApp extends StatelessWidget {
         // FACILITIES
         '/facilities': (context) => const FacilitiesPage(),
         '/admin_facilities': (context) => const AdminFacilitiesPage(),
-        '/admin_manage_facilities': (context) => const AdminManageFacilitiesPage(),
+        // '/admin_manage_facilities': (context) => const AdminManageFacilitiesPage(),
         '/facility_detail_tabs': (context) => const FacilityDetailTabsPage(facilityName: ''),
 
         // BOOKINGS
