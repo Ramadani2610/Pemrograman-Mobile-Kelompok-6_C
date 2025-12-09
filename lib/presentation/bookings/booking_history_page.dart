@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:spareapp_unhas/data/models/booking.dart';
-import 'package:spareapp_unhas/data/services/mock_booking_service.dart';
+
+import 'package:spareapp_unhas/core/constants/app_colors.dart';
+import 'package:spareapp_unhas/core/constants/app_text_styles.dart';
 import 'package:spareapp_unhas/core/widgets/bottom_nav_bar.dart';
 
-const Color primaryColor = Color(0xFFD32F2F);
+import 'package:spareapp_unhas/data/models/booking.dart';
+import 'package:spareapp_unhas/data/services/mock_booking_service.dart';
 
 class BookingHistoryPage extends StatefulWidget {
   final String? userId;
@@ -15,32 +17,33 @@ class BookingHistoryPage extends StatefulWidget {
 }
 
 class _BookingHistoryPageState extends State<BookingHistoryPage> {
-  final service = MockBookingService.instance;
+  final _service = MockBookingService.instance;
+  final _dateFormatter = DateFormat('dd MMM yyyy', 'id_ID');
+
   List<Booking> items = [];
-  String selectedStatus =
-      'semua'; // semua, pending, approved, rejected, returned
+  String selectedStatus = 'semua'; // semua, approved, returned, rejected
 
   @override
   void initState() {
     super.initState();
-    service.seed();
+    _service.seed();
     _load();
   }
 
   void _load() {
+    final all = _service.getAll();
+
     setState(() {
       if (selectedStatus == 'semua') {
-        items = service.getAll();
+        items = all.where((b) => b.status != 'pending').toList();
       } else {
-        items = service.getByStatus(selectedStatus);
+        items = all.where((b) => b.status == selectedStatus).toList();
       }
     });
   }
 
   String _getStatusLabel(String status) {
     switch (status) {
-      case 'pending':
-        return 'Menunggu Persetujuan';
       case 'approved':
         return 'Disetujui';
       case 'rejected':
@@ -54,159 +57,79 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'pending':
-        return Colors.orange;
       case 'approved':
-        return Colors.green;
+        return AppColors.success;
       case 'rejected':
-        return Colors.red;
+        return AppColors.error;
       case 'returned':
-        return Colors.blue;
+        return AppColors.info;
       default:
-        return Colors.grey;
+        return AppColors.secondaryText;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Riwayat Peminjaman'),
-        backgroundColor: const Color(0xFFD32F2F),
-      ),
-      body: Column(
-        children: [
-          // Filter Tab
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                _buildFilterChip('semua', 'Semua'),
-                _buildFilterChip('pending', 'Menunggu'),
-                _buildFilterChip('approved', 'Disetujui'),
-                _buildFilterChip('returned', 'Dikembalikan'),
-                _buildFilterChip('rejected', 'Ditolak'),
-              ],
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ------- HEADER -------
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Text(
+                'Riwayat Peminjaman',
+                style: AppTextStyles.heading1,
+              ),
             ),
-          ),
-          // Booking List
-          Expanded(
-            child: items.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.history, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Belum ada peminjaman',
-                          style: Theme.of(context).textTheme.titleMedium,
+
+            // ------- FILTER -------
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _buildFilterChip('semua', 'Semua'),
+                  _buildFilterChip('approved', 'Disetujui'),
+                  _buildFilterChip('returned', 'Dikembalikan'),
+                  _buildFilterChip('rejected', 'Ditolak'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ------- LIST -------
+            Expanded(
+              child: items.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Belum ada riwayat peminjaman.',
+                        style: AppTextStyles.body2.copyWith(
+                          color: AppColors.secondaryText,
                         ),
-                      ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      itemCount: items.length,
+                      itemBuilder: (context, i) {
+                        final b = items[i];
+                        return _HistoryCard(
+                          booking: b,
+                          dateFormatter: _dateFormatter,
+                          statusLabel: _getStatusLabel(b.status),
+                          statusColor: _getStatusColor(b.status),
+                        );
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: items.length,
-                    itemBuilder: (context, i) {
-                      final b = items[i];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          b.facilityId,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Jumlah: ${b.quantity}x',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _getStatusColor(
-                                        b.status,
-                                      ).withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      _getStatusLabel(b.status),
-                                      style: TextStyle(
-                                        color: _getStatusColor(b.status),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Dari: ${DateFormat('dd/MM/yyyy').format(b.startDate)}',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  ),
-                                  Text(
-                                    'Hingga: ${DateFormat('dd/MM/yyyy').format(b.endDate)}',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                              if (b.purpose.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Tujuan: ${b.purpose}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
+
+      // ------- NAVBAR (tab Riwayat) -------
       bottomNavigationBar: BottomNavBar(
         selectedIndex: 3,
         onItemTapped: (index) {
@@ -218,10 +141,10 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
               Navigator.pushNamed(context, '/facilities');
               break;
             case 2:
-              // Notifications page (to be implemented)
+              Navigator.pushNamed(context, '/review_booking');
               break;
             case 3:
-              // Already on booking history page
+              // already here
               break;
             case 4:
               Navigator.pushNamed(context, '/profile');
@@ -234,23 +157,157 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
   Widget _buildFilterChip(String value, String label) {
     final isSelected = selectedStatus == value;
+
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (_) {
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () {
           setState(() {
             selectedStatus = value;
             _load();
           });
         },
-        backgroundColor: Colors.grey[200],
-        selectedColor: const Color(0xFFD32F2F),
-        labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.black,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: isSelected ? AppColors.mainGradient : null,
+            color: isSelected ? null : Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: isSelected ? Colors.transparent : AppColors.border,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.cardShadow,
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: AppTextStyles.body1.copyWith(
+              fontWeight: FontWeight.w500,
+              color: isSelected ? Colors.white : AppColors.titleText,
+            ),
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _HistoryCard extends StatelessWidget {
+  final Booking booking;
+  final DateFormat dateFormatter;
+  final String statusLabel;
+  final Color statusColor;
+
+  const _HistoryCard({
+    required this.booking,
+    required this.dateFormatter,
+    required this.statusLabel,
+    required this.statusColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // header: nama + status
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  booking.facilityId.isNotEmpty
+                      ? booking.facilityId
+                      : booking.roomId ?? '-',
+                  style: AppTextStyles.heading3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  statusLabel,
+                  style: AppTextStyles.body2.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // jumlah
+          Text(
+            'Jumlah: ${booking.quantity}x',
+            style: AppTextStyles.body2.copyWith(
+              color: AppColors.secondaryText,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // tanggal dari – hingga
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Dari: ${dateFormatter.format(booking.startDate)}',
+                style: AppTextStyles.body2.copyWith(
+                  color: AppColors.secondaryText,
+                ),
+              ),
+              Text(
+                'Hingga: ${dateFormatter.format(booking.endDate)}',
+                style: AppTextStyles.body2.copyWith(
+                  color: AppColors.secondaryText,
+                ),
+              ),
+            ],
+          ),
+
+          if (booking.purpose.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Tujuan:',
+              style: AppTextStyles.body2.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              booking.purpose,
+              style: AppTextStyles.body2.copyWith(
+                color: AppColors.titleText,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
