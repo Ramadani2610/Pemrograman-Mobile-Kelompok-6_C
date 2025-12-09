@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/widgets/bottom_nav_bar.dart';
-import '../../presentation/class/search_classroom.dart';
 
 class MainClassroomPage extends StatefulWidget {
   const MainClassroomPage({super.key});
@@ -12,8 +10,6 @@ class MainClassroomPage extends StatefulWidget {
 }
 
 class _MainClassroomPageState extends State<MainClassroomPage> {
-  int _selectedBottomIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,153 +20,138 @@ class _MainClassroomPageState extends State<MainClassroomPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ======= TOP BAR (Back + Chat) =======
+              // ================= HEADER =================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.arrow_back_ios_new, size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Kembali',
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.nonClassColor,
+                  // Kiri: Back + Title
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.border,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
+                          child:
+                              const Icon(Icons.arrow_back_ios_new, size: 16),
                         ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: AppColors.mainGradientStart,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // ======= TITLE =======
-              Text(
-                'Kelola Kelas',
-                style: AppTextStyles.heading2.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ======= SUMMARY CARDS (60 / 32 / 28) =======
-              Row(
-                children: [
-                  Expanded(
-                    child: _summaryCard(
-                      value: '60',
-                      label: 'Total',
-                      isTotal: true,
-                      isUsed: false,
-                      isAvailable: false,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _summaryCard(
-                      value: '32',
-                      label: 'Terpakai',
-                      isTotal: false,
-                      isUsed: true,
-                      isAvailable: false,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _summaryCard(
-                      value: '28',
-                      label: 'Tersedia',
-                      isTotal: false,
-                      isUsed: false,
-                      isAvailable: true,
-                    ),
-                  ),
-                ],
-              ),
-
-
-              const SizedBox(height: 18),
-
-              // ======= FILTER BUTTONS (Jadwal / Cari / Reservasi) =======
-              Row(
-                children: [
-                  Expanded(
-                    child: _roundedGradientButton(
-                      label: 'Jadwal',
-                      onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/class_schedule',
-                                );
-                              },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _roundedGradientButton(
-                      label: 'Cari',
-                      onTap: () {
-                          Navigator.pushNamed(
-                                  context,
-                                  '/search_classroom',
-                                );
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _roundedGradientButton(
-                      label: 'Reservasi',
-                      onTap: () {
-                        Navigator.pushNamed(
-                                  context,
-                                  '/class_reservation',
-                                );
-                      },
-                    ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Kelola Kelas',
+                            style: AppTextStyles.heading2.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 24,
+                            ),
+                          ),
+                          Text(
+                            'Admin Dashboard',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.secondaryText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
 
               const SizedBox(height: 24),
 
-              // ======= SECTION TITLE =======
+              // =============== RINGKASAN HARI INI (HERO CARD) ===============
+              _buildSummaryCard(),
+
+              const SizedBox(height: 24),
+
+              // =============== AKSI CEPAT ===============
               Text(
-                'Tinjau Peminjaman',
+                'Aksi Cepat',
                 style: AppTextStyles.heading3.copyWith(
-                  color: AppColors.titleText,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-
               const SizedBox(height: 12),
 
-              // ======= LOAN CARD =======
-              _loanReviewCard(),
-
-              const SizedBox(height: 8),
-
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  'Lihat Lebih Banyak...',
-                  style: AppTextStyles.body2.copyWith(
-                    color: AppColors.info,
-                    fontWeight: FontWeight.w500,
+              Row(
+                children: [
+                  _quickActionCard(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Jadwal',
+                    description: 'Lihat timeline kelas\nper lantai.',
+                    color: AppColors.mainGradientStart,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/class_schedule'),
                   ),
+                  const SizedBox(width: 10),
+                  _quickActionCard(
+                    icon: Icons.search_outlined,
+                    label: 'Cari',
+                    description: 'Temukan ruang\nkelas kosong.',
+                    color: Colors.blue.shade700,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/search_classroom'),
+                  ),
+                  const SizedBox(width: 10),
+                  _quickActionCard(
+                    icon: Icons.add_circle_outlined,
+                    label: 'Reservasi',
+                    description: 'Ajukan peminjaman\nkelas secara manual.',
+                    color: Colors.green.shade700,
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/class_reservation'),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 32),
+
+              // =============== AKTIVITAS TERAKHIR ===============
+              Text(
+                'Aktivitas Terakhir',
+                style: AppTextStyles.heading3.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
+              ),
+              const SizedBox(height: 12),
+
+              _activityItem(
+                title: 'Pemakaian kelas G01',
+                subtitle: 'Teknik Informatika • 13:00 - 14:40',
+                statusLabel: 'Berlangsung',
+                statusColor: AppColors.mainGradientStart,
+              ),
+              const SizedBox(height: 8),
+              _activityItem(
+                title: 'Reservasi Kelas 101',
+                subtitle: 'Agenda Organisasi HIMATIF',
+                statusLabel: 'Menunggu',
+                statusColor: Colors.orange.shade700,
+              ),
+              const SizedBox(height: 8),
+              _activityItem(
+                title: 'Kelas 201 dikembalikan',
+                subtitle: 'Metode Penelitian • Sesi selesai',
+                statusLabel: 'Selesai',
+                statusColor: Colors.green.shade700,
               ),
 
               const SizedBox(height: 80),
@@ -178,285 +159,343 @@ class _MainClassroomPageState extends State<MainClassroomPage> {
           ),
         ),
       ),
-
-      // ======= BOTTOM NAVBAR (admin) =======
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedBottomIndex,
-        onItemTapped: (index) {
-          setState(() => _selectedBottomIndex = index);
-          // TODO: sesuaikan navigation antar page admin jika perlu
-        },
-      ),
     );
   }
 
-  // ===================================================================
-  // WIDGET SUMMARY CARD (Total / Terpakai / Tersedia)
-  // ===================================================================
-  Widget _summaryCard({
-    required String value,
-    required String label,
-    required bool isTotal,
-    required bool isUsed,
-    required bool isAvailable,
-  }) {
+  // ================== HERO SUMMARY CARD ==================
+  Widget _buildSummaryCard() {
+    // Untuk sekarang masih dummy number.
+    const total = 60;
+    const used = 32;
+    const available = 28;
+
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.backgroundColor,
-        borderRadius: BorderRadius.circular(14),
+        gradient: AppColors.mainGradient,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // ==== Angka ====
-          isUsed
-              ? ShaderMask(
-                  shaderCallback: (bounds) =>
-                      AppColors.mainGradient.createShader(
-                    Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                  ),
-                  child: Text(
-                    value,
-                    style: AppTextStyles.heading3.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 26,
-                    ),
-                  ),
-                )
-              : isAvailable
-                  ? ShaderMask(
-                      shaderCallback: (bounds) =>
-                          AppColors.greenGradient.createShader(
-                        Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                      ),
-                      child: Text(
-                        value,
-                        style: AppTextStyles.heading3.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 26,
-                        ),
-                      ),
-                    )
-                  : Text(
-                      value,
-                      style: AppTextStyles.heading3.copyWith(
-                        color: Color(0xFF676666),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 26,
-                      ),
-                    ),
-
-          const SizedBox(height: 4),
-
-          // ==== Label ====
-          Text(
-            label,
-            style: AppTextStyles.body2.copyWith(
-              color: isTotal
-                  ? AppColors.nonClassColor
-                  : isUsed
-                      ? AppColors.mainGradientStart
-                      : Colors.green.shade700,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===================================================================
-  // WIDGET ROUNDED GRADIENT BUTTON (Jadwal / Cari / Reservasi)
-  // ===================================================================
-  Widget _roundedGradientButton({
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          gradient: AppColors.mainGradient,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.cardShadow,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: AppTextStyles.button1.copyWith(
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ===================================================================
-  // WIDGET CARD TINJAU PEMINJAMAN
-  // ===================================================================
-  Widget _loanReviewCard() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundColor,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.mainGradientStart, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: AppColors.cardShadow.withOpacity(0.6),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title merah
-          Text(
-            'Nama Peminjam',
-            style: AppTextStyles.body1.copyWith(
-              color: AppColors.mainGradientStart,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Info utama + mata kuliah (kartu biru)
+          // Title + icon
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Info ruangan
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '202',
-                    style: AppTextStyles.heading3.copyWith(
-                      fontWeight: FontWeight.w700,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ringkasan Hari Ini',
+                      style: AppTextStyles.heading3.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'CR 100',
-                    style: AppTextStyles.body2.copyWith(
-                      color: AppColors.secondaryText,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Pantau pemakaian ruang kelas dan ketersediaan secara cepat.',
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white.withOpacity(0.85),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '13:00 - 14:40',
-                    style: AppTextStyles.body2,
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: 12),
-
-              // Kartu biru mata kuliah
-              Expanded(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.blueGradient,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    'Teknik Informatika 2023\nPemrograman Mobile C',
-                    style: AppTextStyles.body2.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.calendar_month_outlined,
+                  color: Colors.white,
+                  size: 22,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
-          // Tanggal
-          Text(
-            'Tanggal / Status Peminjam\n30/11/2025',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.secondaryText,
-            ),
+          // 3 angka utama
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _summaryNumber(
+                label: 'Total Kelas',
+                value: '$total',
+                icon: Icons.meeting_room_outlined,
+              ),
+              _summaryNumber(
+                label: 'Terpakai',
+                value: '$used',
+                icon: Icons.event_busy_outlined,
+              ),
+              _summaryNumber(
+                label: 'Tersedia',
+                value: '$available',
+                icon: Icons.event_available_outlined,
+              ),
+            ],
           ),
 
           const SizedBox(height: 12),
 
-          // Tombol aksi: Terima / Batal / Lihat Detail
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Terima (filled red)
-              _smallActionButton(
-                label: 'Terima',
-                gradient: AppColors.mainGradient,
-                textColor: Colors.white,
-              ),
-              const SizedBox(width: 8),
-
-              // Batal (outline grey)
-              _smallActionButton(
-                label: 'Batal',
-                background: Colors.white,
-                borderColor: AppColors.border,
-                textColor: AppColors.secondaryText,
-              ),
-              const SizedBox(width: 8),
-
-              // Lihat Detail (biru)
-              _smallActionButton(
-                label: 'Lihat Detail',
-                gradient: AppColors.blueGradient,
-                textColor: Colors.white,
-              ),
-            ],
+          // progress bar simpel: ratio terpakai vs total
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final ratio = total == 0 ? 0.0 : used / total;
+              final barWidth = constraints.maxWidth;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        width: barWidth,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeOut,
+                        width: barWidth * ratio.clamp(0.0, 1.0),
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${(ratio * 100).round()}% kelas sudah terpakai hari ini',
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _smallActionButton({
+  Widget _summaryNumber({
     required String label,
-    Color? background,    
-    Gradient? gradient,    
-    Color? borderColor,
-    required Color textColor,
+    required String value,
+    required IconData icon,
+  }) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: Colors.white.withOpacity(0.9)),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.white.withOpacity(0.85),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: AppTextStyles.heading3.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 22,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================== QUICK ACTION CARD ==================
+  Widget _quickActionCard({
+    required IconData icon,
+    required String label,
+    required String description,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          height: 110,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.border.withOpacity(0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.cardShadow.withOpacity(0.35),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // icon
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        color.withOpacity(0.95),
+                        color.withOpacity(0.75),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
+                ),
+                const Spacer(),
+                Text(
+                  label,
+                  style: AppTextStyles.body1.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.titleText,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.secondaryText,
+                    fontSize: 11,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ================== ACTIVITY ITEM ==================
+  Widget _activityItem({
+    required String title,
+    required String subtitle,
+    required String statusLabel,
+    required Color statusColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(20),
-        border: borderColor != null
-            ? Border.all(color: borderColor, width: 1)
-            : null,
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.button2.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w500,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cardShadow.withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Icon bulat kiri
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.class_outlined,
+              color: statusColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Teks
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.body1.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.titleText,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.secondaryText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Status pill
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              statusLabel,
+              style: AppTextStyles.caption.copyWith(
+                color: statusColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
