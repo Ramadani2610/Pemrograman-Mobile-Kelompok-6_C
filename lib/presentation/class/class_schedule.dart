@@ -10,21 +10,23 @@ class ClassSchedulePage extends StatefulWidget {
 }
 
 class _ClassSchedulePageState extends State<ClassSchedulePage> {
-  // ====== DUMMY DATA SEMENTARA ======
-  // runtime helper
+  // ====== RUNTIME HELPER ======
   int _timeToMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
 
   final List<String> _floors = ['Ground', 'Lantai 1', 'Lantai 2', 'Lantai 3'];
   int _selectedFloorIndex = 0;
+
   String _searchKeyword = '';
+  String? _selectedDepartment; // null = semua departemen
 
   late final List<RoomSchedule> _allRooms;
+  late final List<String> _departments;
 
   @override
   void initState() {
     super.initState();
 
-    // contoh dummy jadwal:
+    // ====== DUMMY DATA SEMENTARA ======
     _allRooms = [
       RoomSchedule(
         roomCode: 'G01',
@@ -79,26 +81,58 @@ class _ClassSchedulePageState extends State<ClassSchedulePage> {
       ),
       // tambahkan ruangan lain sesuai kebutuhan...
     ];
+
+    // generate daftar departemen unik dari semua slot
+    final deptSet = <String>{};
+    for (final room in _allRooms) {
+      for (final slot in room.slots) {
+        deptSet.add(slot.department);
+      }
+    }
+    _departments = deptSet.toList()..sort();
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedFloor = _floors[_selectedFloorIndex];
 
-    final roomsOnFloor = _allRooms
-        .where((room) => room.floor == selectedFloor)
-        .where((room) {
-          if (_searchKeyword.isEmpty) return true;
-          final kw = _searchKeyword.toLowerCase();
-          return room.roomCode.toLowerCase().contains(kw) ||
-              room.buildingCode.toLowerCase().contains(kw) ||
-              room.slots.any(
-                (s) =>
-                    s.courseName.toLowerCase().contains(kw) ||
-                    s.department.toLowerCase().contains(kw),
-              );
-        })
-        .toList();
+    // 1. filter berdasarkan lantai
+    List<RoomSchedule> roomsOnFloor =
+        _allRooms.where((room) => room.floor == selectedFloor).toList();
+
+    // 2. filter berdasarkan keyword
+    if (_searchKeyword.isNotEmpty) {
+      final kw = _searchKeyword.toLowerCase();
+      roomsOnFloor = roomsOnFloor.where((room) {
+        final inRoom = room.roomCode.toLowerCase().contains(kw) ||
+            room.buildingCode.toLowerCase().contains(kw);
+        final inSlots = room.slots.any(
+          (s) =>
+              s.courseName.toLowerCase().contains(kw) ||
+              s.department.toLowerCase().contains(kw),
+        );
+        return inRoom || inSlots;
+      }).toList();
+    }
+
+    // 3. filter berdasarkan departemen (jika dipilih)
+    if (_selectedDepartment != null) {
+      final dept = _selectedDepartment!;
+      roomsOnFloor = roomsOnFloor
+          .map((room) {
+            final filteredSlots =
+                room.slots.where((s) => s.department == dept).toList();
+            if (filteredSlots.isEmpty) return null;
+            return RoomSchedule(
+              roomCode: room.roomCode,
+              buildingCode: room.buildingCode,
+              floor: room.floor,
+              slots: filteredSlots,
+            );
+          })
+          .whereType<RoomSchedule>()
+          .toList();
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -131,7 +165,7 @@ class _ClassSchedulePageState extends State<ClassSchedulePage> {
               ),
             ),
 
-            // ===== FLOOR TABS (chip) =====
+            // ===== FLOOR TABS (Ground / Lantai 1 / ...) =====
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding:
@@ -141,18 +175,10 @@ class _ClassSchedulePageState extends State<ClassSchedulePage> {
                   final isSelected = index == _selectedFloorIndex;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(
-                        _floors[index],
-                        style: AppTextStyles.body2.copyWith(
-                          color:
-                              isSelected ? Colors.white : AppColors.titleText,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: AppColors.mainGradientStart,
-                      backgroundColor: const Color(0xFFF4F4F4),
-                      onSelected: (_) {
+                    child: _gradientChip(
+                      label: _floors[index],
+                      isSelected: isSelected,
+                      onTap: () {
                         setState(() {
                           _selectedFloorIndex = index;
                         });
@@ -175,13 +201,18 @@ class _ClassSchedulePageState extends State<ClassSchedulePage> {
                 },
                 style: AppTextStyles.body1,
                 decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.search,
-                      color: AppColors.secondaryText, size: 20),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: AppColors.secondaryText,
+                    size: 20,
+                  ),
                   hintText: 'Cari kelas / mata kuliah...',
                   hintStyle: AppTextStyles.body2
                       .copyWith(color: AppColors.secondaryText),
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -203,23 +234,157 @@ class _ClassSchedulePageState extends State<ClassSchedulePage> {
               ),
             ),
 
-            // ===== LIST JADWAL PER RUANG =====
-            Expanded(
-              child: ListView.separated(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemBuilder: (context, index) {
-                  final room = roomsOnFloor[index];
-                  return _RoomScheduleCard(
-                    room: room,
-                    timeToMinutes: _timeToMinutes,
-                  );
-                },
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemCount: roomsOnFloor.length,
+            // ===== DEPARTMENT FILTER =====
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Filter Departemen',
+                  style: AppTextStyles.body2.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  // chip "Semua"
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _outlinedChip(
+                      label: 'Semua',
+                      isSelected: _selectedDepartment == null,
+                      onTap: () {
+                        setState(() {
+                          _selectedDepartment = null;
+                        });
+                      },
+                    ),
+                  ),
+                  ..._departments.map((dept) {
+                    final isSelected = _selectedDepartment == dept;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _outlinedChip(
+                        label: dept,
+                        isSelected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _selectedDepartment =
+                                isSelected ? null : dept;
+                          });
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // ===== LIST JADWAL PER RUANG =====
+            Expanded(
+              child: roomsOnFloor.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Tidak ada jadwal untuk filter yang dipilih.',
+                        style: AppTextStyles.body2.copyWith(
+                          color: AppColors.secondaryText,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemBuilder: (context, index) {
+                        final room = roomsOnFloor[index];
+                        return _RoomScheduleCard(
+                          room: room,
+                          timeToMinutes: _timeToMinutes,
+                        );
+                      },
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: 12),
+                      itemCount: roomsOnFloor.length,
+                    ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ====== CHIP DENGAN GRADIENT UNTUK LANTAI ======
+  Widget _gradientChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSelected ? AppColors.mainGradient : null,
+          color: isSelected ? null : const Color(0xFFF4F4F4),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.cardShadow,
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.body2.copyWith(
+            color: isSelected ? Colors.white : AppColors.titleText,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ====== CHIP OUTLINE UNTUK FILTER DEPARTEMEN ======
+  Widget _outlinedChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final Color borderColor =
+        isSelected ? AppColors.mainGradientStart : AppColors.border;
+
+    final Color textColor =
+        isSelected ? AppColors.mainGradientStart : AppColors.titleText;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.body2.copyWith(
+            color: textColor,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -295,7 +460,7 @@ class _RoomScheduleCard extends StatelessWidget {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
@@ -313,23 +478,29 @@ class _RoomScheduleCard extends StatelessWidget {
         children: [
           // Label ruang di kiri
           SizedBox(
-            width: 64,
+            width: 72,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   room.roomCode,
-                  style: AppTextStyles.heading3,
+                  style: AppTextStyles.heading3.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   room.buildingCode,
-                  style: AppTextStyles.body2
-                      .copyWith(color: AppColors.secondaryText),
+                  style: AppTextStyles.body2.copyWith(
+                    color: AppColors.secondaryText,
+                  ),
                 ),
                 const SizedBox(height: 4),
-                Icon(Icons.meeting_room_outlined,
-                    size: 16, color: AppColors.secondaryText),
+                Icon(
+                  Icons.meeting_room_outlined,
+                  size: 16,
+                  color: AppColors.secondaryText,
+                ),
               ],
             ),
           ),
@@ -338,7 +509,7 @@ class _RoomScheduleCard extends StatelessWidget {
           // Timeline di kanan (scroll horizontal)
           Expanded(
             child: SizedBox(
-              height: 80,
+              height: 92,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(
@@ -352,7 +523,7 @@ class _RoomScheduleCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(
-                              height: 18,
+                              height: 22,
                               child: Stack(
                                 children: timeTicks.map((t) {
                                   final left = (timeToMinutes(t) -
@@ -410,7 +581,7 @@ class _RoomScheduleCard extends StatelessWidget {
 
                         return Positioned(
                           left: left,
-                          top: 28,
+                          top: 30,
                           child: Container(
                             width: width,
                             padding: const EdgeInsets.symmetric(
