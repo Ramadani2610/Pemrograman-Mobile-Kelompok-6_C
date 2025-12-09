@@ -3,8 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/widgets/gradient_widgets.dart';
-import 'package:spareapp_unhas/core/widgets/bottom_nav_bar.dart';
+import '../../core/widgets/bottom_nav_bar.dart';
 
 import '../../data/models/booking.dart';
 import '../../data/models/room.dart';
@@ -12,8 +11,6 @@ import '../../data/models/facility.dart';
 import '../../data/services/mock_booking_service.dart';
 import '../../data/services/mock_room_service.dart';
 import '../../data/services/mock_facility_service.dart';
-
-enum _BookingFilter { all, classOnly, facilityOnly }
 
 class ReviewBookingsPage extends StatefulWidget {
   const ReviewBookingsPage({super.key});
@@ -27,167 +24,248 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
   final _roomService = MockRoomService.instance;
   final _facilityService = MockFacilityService.instance;
 
-  final _timeFormatter = DateFormat('HH:mm');
-  final _dateFormatter = DateFormat('dd MMM yyyy', 'id_ID');
+  final DateFormat _timeFormatter = DateFormat('HH:mm');
+  final DateFormat _dateFormatter = DateFormat('dd MMM yyyy', 'id_ID');
+
+  _BookingFilter _filter = _BookingFilter.all;
+  _StatusTab _statusTab = _StatusTab.pending;
 
   List<Booking> _pendingBookings = [];
-  _BookingFilter _filter = _BookingFilter.all;
+  List<Booking> _activeBookings = [];
+  List<Booking> _completedBookings = [];
+  List<Booking> _rejectedBookings = [];
 
-  // untuk mapping cepat id → room / facility
-  late final Map<String, Room> _roomsById;
-  late final Map<String, Facility> _facilitiesById;
+  Map<String, Room> _roomsById = {};
+  Map<String, Facility> _facilitiesById = {};
+
+  int _selectedBottomIndex = 2; // tab notifikasi/admin review
 
   @override
   void initState() {
     super.initState();
-    _initData();
+    _bookingService.seed(); // dummy data
+    _loadData();
   }
 
-  void _initData() {
-    // ambil semua data mock
+  void _loadData() {
     final rooms = _roomService.getAll();
     final facilities = _facilityService.getAll();
-    final pending = _bookingService.getByStatus('pending');
 
-    _roomsById = {for (final r in rooms) r.id: r};
-    _facilitiesById = {for (final f in facilities) f.id: f};
+    int compareDesc(Booking a, Booking b) => b.startDate.compareTo(a.startDate);
 
     setState(() {
-      _pendingBookings = pending;
+      _roomsById = {for (final r in rooms) r.id: r};
+      _facilitiesById = {for (final f in facilities) f.id: f};
+
+      _pendingBookings = _bookingService.getByStatus('pending')..sort(compareDesc);
+      _activeBookings = _bookingService.getByStatus('approved')..sort(compareDesc);
+      _completedBookings = _bookingService.getByStatus('returned')..sort(compareDesc);
+      _rejectedBookings = _bookingService.getByStatus('rejected')..sort(compareDesc);
     });
   }
 
-  List<Booking> get _visibleBookings {
+  // ========= FILTER BANTUAN =========
+
+  List<Booking> _applyFilter(List<Booking> source) {
     switch (_filter) {
       case _BookingFilter.classOnly:
-        return _pendingBookings
-            .where((b) => (b.roomId ?? '').isNotEmpty)
-            .toList();
+        return source.where((b) => (b.roomId ?? '').isNotEmpty).toList();
       case _BookingFilter.facilityOnly:
-        return _pendingBookings
-            .where((b) => (b.facilityId ?? '').isNotEmpty)
-            .toList();
+        return source.where((b) => (b.facilityId ?? '').isNotEmpty).toList();
       case _BookingFilter.all:
       default:
-        return _pendingBookings;
+        return source;
     }
   }
 
-  // ====== ACTIONS ======
+  String _formatTimeRange(DateTime start, DateTime end) {
+    return '${_timeFormatter.format(start)} - ${_timeFormatter.format(end)}';
+  }
+
+  String _formatDate(DateTime date) => _dateFormatter.format(date);
+
+  Color _statusColor(Booking booking) {
+    switch (booking.status) {
+      case 'pending':
+        return AppColors.warning;
+      case 'approved':
+        return AppColors.success;
+      case 'returned':
+        return AppColors.info;
+      case 'rejected':
+        return AppColors.error;
+      default:
+        return AppColors.secondaryText;
+    }
+  }
+
+  String _statusLabel(Booking booking) {
+    switch (booking.status) {
+      case 'pending':
+        return 'Menunggu Tinjauan';
+      case 'approved':
+        return 'Sedang Digunakan';
+      case 'returned':
+        return 'Selesai';
+      case 'rejected':
+        return 'Ditolak';
+      default:
+        return booking.status;
+    }
+  }
+
+  String _typeLabel(Booking booking) {
+    if ((booking.roomId ?? '').isNotEmpty) return 'Kelas';
+    if ((booking.facilityId ?? '').isNotEmpty) return 'Fasilitas';
+    return 'Lainnya';
+  }
+
+  // ========= AKSI STATUS =========
 
   Future<void> _approveBooking(Booking booking) async {
-    // TODO: ganti 'admin001' dengan id admin yang sedang login (dari auth service)
-    final ok = _bookingService.approve(booking.id, 'admin001');
+    final confirmed = await _showConfirmDialog(
+      title: 'Terima Peminjaman?',
+      message:
+          'Peminjaman ini akan dipindahkan ke status "Sedang Digunakan". Pastikan data sudah benar.',
+      confirmLabel: 'Ya, Terima',
+    );
 
-    if (!ok) {
-      _showSnack('Gagal menyetujui peminjaman.', isError: true);
+    if (confirmed != true) {
+      _showSnack('Perubahan status dibatalkan.');
       return;
     }
 
-    setState(() {
-      _pendingBookings.removeWhere((b) => b.id == booking.id);
-    });
-    _showSnack('Peminjaman telah disetujui.');
+    final ok = _bookingService.approve(booking.id, 'admin001');
+    if (!ok) {
+      _showSnack('Gagal memperbarui status peminjaman.', isError: true);
+      return;
+    }
+
+    _loadData();
+    _showSnack('Peminjaman diterima. Status: Sedang Digunakan.');
+  }
+
+  /// Dialog untuk meminta alasan penolakan.
+  Future<String?> _askRejectReason() async {
+    final controller = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Alasan Penolakan',
+            style: AppTextStyles.heading3,
+          ),
+          content: TextField(
+            controller: controller,
+            maxLines: 3,
+            style: AppTextStyles.body2,
+            decoration: InputDecoration(
+              hintText: 'Masukkan alasan peminjaman ini ditolak',
+              hintStyle: AppTextStyles.body2.copyWith(
+                color: AppColors.secondaryText,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Batal',
+                style: AppTextStyles.button2.copyWith(
+                  color: AppColors.secondaryText,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, controller.text.trim()),
+              child: Text(
+                'Lanjut',
+                style: AppTextStyles.button2.copyWith(
+                  color: AppColors.mainGradientStart,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result?.trim();
   }
 
   Future<void> _rejectBooking(Booking booking) async {
+    // 1) Minta alasan dulu
+    final reason = await _askRejectReason();
+    if (reason == null || reason.isEmpty) {
+      _showSnack('Alasan penolakan wajib diisi.');
+      return;
+    }
+
+    // 2) Konfirmasi
     final confirmed = await _showConfirmDialog(
       title: 'Tolak Peminjaman?',
       message:
-          'Apakah Anda yakin ingin menolak peminjaman ini? Tindakan ini tidak dapat dibatalkan.',
+          'Peminjaman akan ditolak dengan alasan berikut:\n\n"$reason"\n\n'
+          'Peminjam akan mendapatkan notifikasi. Tindakan ini tidak dapat dibatalkan.',
       confirmLabel: 'Ya, Tolak',
     );
-    if (confirmed != true) return;
 
-    final ok = _bookingService.reject(booking.id);
+    if (confirmed != true) {
+      _showSnack('Perubahan status dibatalkan.');
+      return;
+    }
+
+    // 3) Simpan ke service + alasan
+    final ok = _bookingService.reject(
+      booking.id,
+      'admin001',
+      reason: reason,
+    );
     if (!ok) {
       _showSnack('Gagal menolak peminjaman.', isError: true);
       return;
     }
 
-    setState(() {
-      _pendingBookings.removeWhere((b) => b.id == booking.id);
-    });
+    _loadData();
     _showSnack('Peminjaman telah ditolak.');
   }
 
-  void _showDetail(Booking booking) {
-    final isClassBooking = (booking.roomId ?? '').isNotEmpty;
-    final room = isClassBooking && booking.roomId != null
-        ? _roomsById[booking.roomId]
-        : null;
-    final facility = !isClassBooking
-        ? _facilitiesById[booking.facilityId]
-        : null;
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding:
-              const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Detail Peminjaman',
-                style: AppTextStyles.heading3,
-              ),
-              const SizedBox(height: 12),
-              _detailRow('Jenis',
-                  isClassBooking ? 'Peminjaman Kelas' : 'Peminjaman Fasilitas'),
-              if (room != null) ...[
-                _detailRow('Ruang', '${room.name} • ${room.building}'),
-                _detailRow('Lantai', room.floor),
-              ],
-              if (facility != null) ...[
-                _detailRow('Fasilitas', facility.name),
-                _detailRow('Kategori', facility.category),
-              ],
-              _detailRow(
-                'Tanggal',
-                _dateFormatter.format(booking.startDate),
-              ),
-              _detailRow(
-                'Waktu',
-                '${_timeFormatter.format(booking.startDate)}'
-                ' - ${_timeFormatter.format(booking.endDate)}',
-              ),
-              if ((booking.purpose ?? '').isNotEmpty)
-                _detailRow('Keperluan', booking.purpose),
-              if ((booking.quantity ?? 0) > 0)
-                _detailRow('Jumlah', '${booking.quantity} buah'),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  'ID Peminjaman: ${booking.id}',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.secondaryText,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  Future<void> _markAsReturned(Booking booking) async {
+    final confirmed = await _showConfirmDialog(
+      title: 'Tandai Selesai?',
+      message:
+          'Pastikan ruangan/fasilitas sudah benar-benar dikembalikan. Status akan diubah menjadi "Selesai".',
+      confirmLabel: 'Ya, Selesai',
     );
+
+    if (confirmed != true) {
+      _showSnack('Perubahan status dibatalkan.');
+      return;
+    }
+
+    final ok = _bookingService.markReturned(booking.id, 'admin001');
+    if (!ok) {
+      _showSnack('Gagal memperbarui status peminjaman.', isError: true);
+      return;
+    }
+
+    _loadData();
+    _showSnack('Status peminjaman berhasil ditandai selesai.');
   }
+
+  // ========= DIALOG & SNACKBAR =========
 
   Future<bool?> _showConfirmDialog({
     required String title,
@@ -198,15 +276,22 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(title, style: AppTextStyles.heading3),
-          content: Text(message, style: AppTextStyles.body2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            title,
+            style: AppTextStyles.heading3,
+          ),
+          content: Text(
+            message,
+            style: AppTextStyles.body2,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
               child: Text(
-                'Batal',
+                'Tidak',
                 style: AppTextStyles.button2.copyWith(
                   color: AppColors.secondaryText,
                 ),
@@ -228,109 +313,152 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     );
   }
 
-  void _showSnack(String msg, {bool isError = false}) {
+  void _showSnack(String message, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          msg,
+          message,
           style: AppTextStyles.body2.copyWith(color: Colors.white),
         ),
-        backgroundColor: isError ? AppColors.error : AppColors.mainGradientStart,
+        backgroundColor:
+            isError ? AppColors.error : AppColors.mainGradientStart,
       ),
     );
   }
 
-  // ====== BUILD ======
+  // ========= BUILD =========
 
   @override
   Widget build(BuildContext context) {
-    final todayLabel = _dateFormatter.format(DateTime.now());
+    final today = DateTime.now();
+    final todayLabel =
+        DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(today);
+
+    final pendingList = _applyFilter(_pendingBookings);
+    final activeList = _applyFilter(_activeBookings);
+    final completedList = _applyFilter(_completedBookings);
+    final rejectedList = _applyFilter(_rejectedBookings);
+
+    // list sesuai tab status
+    late final List<Booking> currentList;
+    late final String sectionTitle;
+    late final String emptyLabel;
+
+    switch (_statusTab) {
+      case _StatusTab.pending:
+        currentList = pendingList;
+        sectionTitle = 'Menunggu Tinjauan';
+        emptyLabel = 'Tidak ada peminjaman yang menunggu tinjauan.';
+        break;
+      case _StatusTab.active:
+        currentList = activeList;
+        sectionTitle = 'Sedang Digunakan';
+        emptyLabel = 'Tidak ada peminjaman yang sedang digunakan.';
+        break;
+      case _StatusTab.completed:
+        currentList = completedList;
+        sectionTitle = 'Selesai';
+        emptyLabel = 'Belum ada peminjaman yang selesai.';
+        break;
+      case _StatusTab.rejected:
+        currentList = rejectedList;
+        sectionTitle = 'Ditolak';
+        emptyLabel = 'Tidak ada peminjaman yang ditolak.';
+        break;
+    }
+
+    final allEmpty = currentList.isEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // AppBar custom
+            // ======= HEADER =======
             Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-              child: Row(
-                children: [
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: AppColors.mainGradientStart,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Judul + tanggal
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tinjau Peminjaman', style: AppTextStyles.heading1),
+                  Text(
+                    'Tinjau Peminjaman',
+                    style: AppTextStyles.heading2.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    'Hari ini • $todayLabel',
+                    todayLabel,
                     style: AppTextStyles.body2.copyWith(
                       color: AppColors.secondaryText,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildFilterChips(),
-                  const SizedBox(height: 8),
+                  _buildStatusTabs(
+                    pending: pendingList.length,
+                    active: activeList.length,
+                    completed: completedList.length,
+                    rejected: rejectedList.length,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFilterTabs(),
                 ],
               ),
             ),
 
+            // ======= LIST SECTION =======
             Expanded(
-              child: _visibleBookings.isEmpty
+              child: allEmpty
                   ? Center(
-                      child: Text(
-                        'Tidak ada peminjaman menunggu persetujuan.',
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.secondaryText,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          emptyLabel,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.body2.copyWith(
+                            color: AppColors.secondaryText,
+                          ),
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-                      itemCount: _visibleBookings.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 14),
-                      itemBuilder: (context, index) {
-                        final booking = _visibleBookings[index];
-                        return _buildBookingCard(booking);
-                      },
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      child: _buildStatusSection(
+                        title: sectionTitle,
+                        bookings: currentList,
+                        emptyLabel: emptyLabel,
+                      ),
                     ),
             ),
           ],
         ),
       ),
+
+      // ======= BOTTOM NAVBAR ADMIN =======
       bottomNavigationBar: BottomNavBar(
-        selectedIndex: 2,
+        selectedIndex: _selectedBottomIndex,
         onItemTapped: (index) {
+          if (index == _selectedBottomIndex) return;
+          setState(() => _selectedBottomIndex = index);
+
           switch (index) {
             case 0:
-              Navigator.pushNamed(context, '/home');
+              Navigator.pushReplacementNamed(context, '/home_user');
               break;
             case 1:
-              Navigator.pushNamed(context, '/manage');
+              Navigator.pushReplacementNamed(context, '/manage');
+              break;
             case 2:
-              // Already on notification page
+              // already here
               break;
             case 3:
-              Navigator.pushNamed(context, '/booking_history');
+              Navigator.pushReplacementNamed(context, '/booking_history');
               break;
             case 4:
-              Navigator.pushNamed(context, '/profile');
+              Navigator.pushReplacementNamed(context, '/profile');
               break;
           }
         },
@@ -338,9 +466,172 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     );
   }
 
-  // ====== UI HELPERS ======
+  // ========= STATUS TABS (Menunggu / Berjalan / Selesai / Ditolak) =========
 
-  Widget _buildFilterChips() {
+  Widget _buildStatusTabs({
+    required int pending,
+    required int active,
+    required int completed,
+    required int rejected,
+  }) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            _statusTabItem(
+              label: 'Menunggu',
+              count: pending,
+              isSelected: _statusTab == _StatusTab.pending,
+              onTap: () => setState(() => _statusTab = _StatusTab.pending),
+            ),
+            _statusTabItem(
+              label: 'Berjalan',
+              count: active,
+              isSelected: _statusTab == _StatusTab.active,
+              onTap: () => setState(() => _statusTab = _StatusTab.active),
+            ),
+            _statusTabItem(
+              label: 'Selesai',
+              count: completed,
+              isSelected: _statusTab == _StatusTab.completed,
+              onTap: () => setState(() => _statusTab = _StatusTab.completed),
+            ),
+            _statusTabItem(
+              label: 'Ditolak',
+              count: rejected,
+              isSelected: _statusTab == _StatusTab.rejected,
+              onTap: () => setState(() => _statusTab = _StatusTab.rejected),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 1,
+          color: AppColors.border,
+        ),
+      ],
+    );
+  }
+
+  Widget _statusTabItem({
+    required String label,
+    required int count,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final Color activeColor = AppColors.mainGradientStart;
+    final Color inactiveColor = AppColors.secondaryText;
+
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.body2.copyWith(
+                    color: isSelected ? activeColor : inactiveColor,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? activeColor.withOpacity(0.12)
+                        : AppColors.border.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    count.toString(),
+                    style: AppTextStyles.caption.copyWith(
+                      fontSize: 10,
+                      color: isSelected ? activeColor : Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              height: 3,
+              width: 28,
+              decoration: BoxDecoration(
+                color: isSelected ? activeColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ========= WIDGET SECTION STATUS =========
+
+  Widget _buildStatusSection({
+    required String title,
+    required List<Booking> bookings,
+    required String emptyLabel,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.heading3.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (bookings.isEmpty)
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Text(
+              emptyLabel,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.secondaryText,
+              ),
+            ),
+          )
+        else
+          Column(
+            children: bookings
+                .map(
+                  (b) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildBookingCard(
+                      b,
+                      isFacility: (b.facilityId ?? '').isNotEmpty,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+      ],
+    );
+  }
+
+  // ========= FILTER TAB (Semua / Kelas / Fasilitas) =========
+
+  Widget _buildFilterTabs() {
     return Row(
       children: [
         _filterChip(
@@ -372,10 +663,10 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          gradient: isSelected ? AppColors.mainGradient : null,
           color: isSelected ? null : Colors.white,
+          gradient: isSelected ? AppColors.mainGradient : null,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? Colors.transparent : AppColors.border,
@@ -384,11 +675,11 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
               ? [
                   BoxShadow(
                     color: AppColors.cardShadow,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
                   ),
                 ]
-              : null,
+              : [],
         ),
         child: Text(
           label,
@@ -401,241 +692,490 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     );
   }
 
-  Widget _buildBookingCard(Booking booking) {
-    final isClassBooking = (booking.roomId ?? '').isNotEmpty;
-    final room =
-        isClassBooking && booking.roomId != null ? _roomsById[booking.roomId] : null;
-    final facility = !isClassBooking
-        ? _facilitiesById[booking.facilityId]
-        : null;
+  // ========= KARTU PEMINJAMAN =========
 
-    final startTime = _timeFormatter.format(booking.startDate);
-    final endTime = _timeFormatter.format(booking.endDate);
+  Widget _buildBookingCard(
+    Booking booking, {
+    required bool isFacility,
+  }) {
+    final room = _roomsById[booking.roomId];
+    final facility = isFacility ? _facilitiesById[booking.facilityId] : null;
 
-    final typeLabel = isClassBooking ? 'Kelas' : 'Fasilitas';
+    final statusColor = _statusColor(booking);
+    final statusLabel = _statusLabel(booking);
+    final typeLabel = _typeLabel(booking);
+
+    // tombol aksi sesuai status
+    final List<Widget> actions = [];
+
+    if (booking.status == 'pending') {
+      actions.addAll([
+        _smallActionButton(
+          label: 'Terima',
+          gradient: AppColors.mainGradient,
+          textColor: Colors.white,
+          onTap: () => _approveBooking(booking),
+        ),
+        const SizedBox(width: 8),
+        _smallActionButton(
+          label: 'Tolak',
+          background: Colors.white,
+          borderColor: AppColors.border,
+          textColor: AppColors.secondaryText,
+          onTap: () => _rejectBooking(booking),
+        ),
+      ]);
+    } else if (booking.status == 'approved') {
+      actions.add(
+        _smallActionButton(
+          label: 'Tandai Selesai',
+          gradient: AppColors.greenGradient,
+          textColor: Colors.white,
+          onTap: () => _markAsReturned(booking),
+        ),
+      );
+    }
+
+    // tombol lihat detail selalu ada
+    if (actions.isNotEmpty) {
+      actions.add(const SizedBox(width: 8));
+    }
+    actions.add(
+      _smallActionButton(
+        label: 'Lihat Detail',
+        gradient: AppColors.blueGradient,
+        textColor: Colors.white,
+        onTap: () => _showBookingDetail(
+          booking,
+          room: room,
+          facility: facility,
+        ),
+      ),
+    );
+
+    final hasAcademicInfo =
+        (booking.className != null && booking.className!.isNotEmpty) ||
+            (booking.courseName != null && booking.courseName!.isNotEmpty) ||
+            (booking.department != null && booking.department!.isNotEmpty);
+
+    final hasRejectReason =
+        booking.status == 'rejected' &&
+        (booking.rejectedReason != null &&
+            booking.rejectedReason!.trim().isNotEmpty);
 
     return Container(
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
+        color: AppColors.backgroundColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.mainGradientStart, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: AppColors.cardShadow,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header merah "Nama Peminjam" + chip jenis
-            Row(
-              children: [
-                Text(
-                  'Nama Peminjam',
-                  style: AppTextStyles.body2.copyWith(
-                    color: AppColors.mainGradientStart,
-                    fontWeight: FontWeight.w600,
-                  ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // header: status + type
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Text(
-                    typeLabel,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Info utama + "kartu biru/hijau/abu" di kanan
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Info ruangan / fasilitas
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      room?.name ?? facility?.name ?? '-',
-                      style: AppTextStyles.heading3.copyWith(
-                        fontWeight: FontWeight.w700,
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    if (room != null)
-                      Text(
-                        room.name,
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.secondaryText,
-                        ),
-                      ),
-                    if (facility != null)
-                      Text(
-                        facility.category,
-                        style: AppTextStyles.body2.copyWith(
-                          color: AppColors.secondaryText,
-                        ),
-                      ),
-                    const SizedBox(height: 4),
+                    const SizedBox(width: 6),
                     Text(
-                      '$startTime - $endTime',
-                      style: AppTextStyles.body2.copyWith(
-                        color: AppColors.mainGradientStart,
+                      statusLabel,
+                      style: AppTextStyles.caption.copyWith(
+                        color: statusColor,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(width: 12),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  typeLabel,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.secondaryText,
+                  ),
+                ),
+              ),
+            ],
+          ),
 
-                // Kartu info tujuan / mata kuliah
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isClassBooking
-                          ? AppColors.info
-                          : AppColors.secondaryText,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+          const SizedBox(height: 12),
+
+          // Nama peminjam
+          Text(
+            booking.name ?? '-',
+            style: AppTextStyles.body1.copyWith(
+              color: AppColors.mainGradientStart,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Ruang atau fasilitas
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                isFacility ? Icons.devices_other : Icons.meeting_room_outlined,
+                size: 18,
+                color: AppColors.secondaryText,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  isFacility
+                      ? (facility?.name ?? '-')
+                      : (room != null ? '${room.id} • ${room.building}' : '-'),
+                  style: AppTextStyles.body2,
+                ),
+              ),
+            ],
+          ),
+
+          // Info akademik (kelas, matkul, jurusan) → sesuai form reservasi kelas
+          if (hasAcademicInfo) ...[
+            const SizedBox(height: 6),
+            if (booking.className != null && booking.className!.isNotEmpty)
+              Row(
+                children: [
+                  const Icon(Icons.school,
+                      size: 16, color: AppColors.secondaryText),
+                  const SizedBox(width: 6),
+                  Expanded(
                     child: Text(
-                      (booking.purpose ?? '').isNotEmpty
-                          ? booking.purpose
-                          : (isClassBooking
-                              ? 'Kegiatan perkuliahan'
-                              : 'Peminjaman fasilitas'),
+                      'Kelas: ${booking.className}',
                       style: AppTextStyles.body2.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
+                        color: AppColors.secondaryText,
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Footer kecil: tanggal + id
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Tanggal: ${_dateFormatter.format(booking.startDate)}',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.secondaryText,
+                ],
+              ),
+            if (booking.courseName != null && booking.courseName!.isNotEmpty)
+              Row(
+                children: [
+                  const Icon(Icons.menu_book,
+                      size: 16, color: AppColors.secondaryText),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Mata Kuliah: ${booking.courseName}',
+                      style: AppTextStyles.body2.copyWith(
+                        color: AppColors.secondaryText,
+                      ),
+                    ),
                   ),
-                ),
-                Text(
-                  '#${booking.id}',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.secondaryText,
+                ],
+              ),
+            if (booking.department != null &&
+                booking.department!.isNotEmpty)
+              Row(
+                children: [
+                  const Icon(Icons.apartment,
+                      size: 16, color: AppColors.secondaryText),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Jurusan: ${booking.department}',
+                      style: AppTextStyles.body2.copyWith(
+                        color: AppColors.secondaryText,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
+                ],
+              ),
+          ],
 
-            // Tombol aksi
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _smallActionButton(
-                  label: 'Terima',
-                  backgroundGradient: AppColors.mainGradient,
-                  textColor: Colors.white,
-                  onTap: () => _approveBooking(booking),
+          const SizedBox(height: 6),
+
+          // Tanggal & jam
+          Row(
+            children: [
+              const Icon(Icons.date_range,
+                  size: 18, color: AppColors.secondaryText),
+              const SizedBox(width: 6),
+              Text(
+                _formatDate(booking.startDate),
+                style: AppTextStyles.body2.copyWith(
+                  color: AppColors.secondaryText,
                 ),
-                const SizedBox(width: 8),
-                _smallActionButton(
-                  label: 'Batal',
-                  backgroundColor: Colors.white,
-                  borderColor: AppColors.border,
-                  textColor: AppColors.secondaryText,
-                  onTap: () => _rejectBooking(booking),
-                ),
-                const SizedBox(width: 8),
-                _smallActionButton(
-                  label: 'Lihat Detail',
-                  backgroundGradient: AppColors.blueGradient,
-                  textColor: Colors.white,
-                  onTap: () => _showDetail(booking),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.access_time,
+                  size: 18, color: AppColors.secondaryText),
+              const SizedBox(width: 6),
+              Text(
+                _formatTimeRange(booking.startDate, booking.endDate),
+                style: AppTextStyles.body2,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Tujuan (dari form reservasi)
+          if ((booking.purpose ?? '').isNotEmpty) ...[
+            Text(
+              'Tujuan:',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.secondaryText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              booking.purpose!,
+              style: AppTextStyles.body2,
             ),
           ],
-        ),
+
+          // Alasan Ditolak (khusus status rejected)
+          if (hasRejectReason) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Alasan Ditolak:',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              booking.rejectedReason!,
+              style: AppTextStyles.body2.copyWith(
+                color: AppColors.error,
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 16),
+
+          // tombol aksi
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: actions,
+          ),
+        ],
       ),
     );
   }
 
   Widget _smallActionButton({
     required String label,
-    VoidCallback? onTap,
-    Color? backgroundColor,
+    Color? background,
+    Gradient? gradient,
     Color? borderColor,
-    LinearGradient? backgroundGradient,
     required Color textColor,
+    required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          gradient: backgroundGradient,
-          color: backgroundGradient == null ? backgroundColor : null,
+          color: background,
+          gradient: gradient,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor ?? Colors.transparent),
+          border: borderColor != null
+              ? Border.all(color: borderColor, width: 1)
+              : null,
         ),
         child: Text(
           label,
-          style: AppTextStyles.caption.copyWith(
+          style: AppTextStyles.button2.copyWith(
             color: textColor,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  // ========= BOTTOM SHEET DETAIL =========
+
+  void _showBookingDetail(
+    Booking booking, {
+    Room? room,
+    Facility? facility,
+  }) {
+    final hasRejectReason =
+        booking.status == 'rejected' &&
+        (booking.rejectedReason != null &&
+            booking.rejectedReason!.trim().isNotEmpty);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Detail Peminjaman',
+                    style: AppTextStyles.heading3.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _detailRow('ID Peminjaman', booking.id),
+                  _detailRow('Nama Peminjam', booking.name ?? '-'),
+                  _detailRow('Tipe', _typeLabel(booking)),
+                  _detailRow(
+                    'Status',
+                    _statusLabel(booking),
+                    valueColor: _statusColor(booking),
+                  ),
+                  _detailRow(
+                    'Tanggal',
+                    _formatDate(booking.startDate),
+                  ),
+                  _detailRow(
+                    'Waktu',
+                    _formatTimeRange(
+                      booking.startDate,
+                      booking.endDate,
+                    ),
+                  ),
+                  if (booking.className != null &&
+                      booking.className!.isNotEmpty)
+                    _detailRow('Kelas', booking.className!),
+                  if (booking.courseName != null &&
+                      booking.courseName!.isNotEmpty)
+                    _detailRow('Mata Kuliah', booking.courseName!),
+                  if (booking.department != null &&
+                      booking.department!.isNotEmpty)
+                    _detailRow('Jurusan', booking.department!),
+                  if (room != null) ...[
+                    _detailRow('Ruang Kelas', room.id),
+                    _detailRow('Gedung', room.building),
+                    _detailRow('Lantai', 'Lantai ${room.floor}'),
+                  ],
+                  if (facility != null) ...[
+                    _detailRow('Fasilitas', facility.name),
+                    _detailRow('Kode', facility.id ?? '-'),
+                  ],
+                  if ((booking.purpose ?? '').isNotEmpty)
+                    _detailRow('Tujuan', booking.purpose!),
+                  if (hasRejectReason)
+                    _detailRow(
+                      'Alasan Ditolak',
+                      booking.rejectedReason!,
+                      valueColor: AppColors.error,
+                    ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _detailRow(
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
+            width: 130,
             child: Text(
               label,
-              style: AppTextStyles.body2.copyWith(
+              style: AppTextStyles.caption.copyWith(
                 color: AppColors.secondaryText,
               ),
             ),
           ),
-          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: AppTextStyles.body2,
+              style: AppTextStyles.body2.copyWith(
+                color: valueColor ?? AppColors.titleText,
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+// filter untuk tab atas (kelas/fasilitas)
+enum _BookingFilter {
+  all,
+  classOnly,
+  facilityOnly,
+}
+
+// tab status utama
+enum _StatusTab {
+  pending, // Menunggu
+  active, // Berjalan
+  completed, // Selesai
+  rejected, // Ditolak
 }
