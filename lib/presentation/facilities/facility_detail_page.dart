@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spareapp_unhas/data/models/facility.dart';
 import 'package:spareapp_unhas/presentation/bookings/create_booking_page.dart';
-import 'package:spareapp_unhas/core/utils/no_animation_route.dart';
 
 class FacilityDetailPage extends StatelessWidget {
   final Facility facility;
@@ -74,7 +73,7 @@ class FacilityDetailPage extends StatelessWidget {
                 ? () {
                     Navigator.push(
                       context,
-                      NoAnimationPageRoute(
+                      MaterialPageRoute(
                         builder: (_) => CreateBookingPage(facility: facility),
                       ),
                     );
