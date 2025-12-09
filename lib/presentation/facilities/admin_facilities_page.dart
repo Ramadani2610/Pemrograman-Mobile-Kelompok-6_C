@@ -11,7 +11,7 @@ class AdminFacilitiesPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFD32F2F),
+        backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         title: const Text('Kelola Fasilitas'),
         actions: [
           IconButton(
@@ -45,6 +45,30 @@ class AdminFacilitiesPage extends StatelessWidget {
             '10 Unit tersedia',
             '30 Unit dipinjam',
             '3 Unit rusak',
+          ),
+          const SizedBox(height: 16),
+          _buildFacilityCard(
+            context,
+            'spidol',
+            '20 Unit tersedia',
+            '10 Unit dipinjam',
+            '2 Unit rusak',
+          ),
+          const SizedBox(height: 16),
+          _buildFacilityCard(
+            context,
+            'Kabel HDMI',
+            '15 Unit tersedia',
+            '5 Unit dipinjam',
+            '1 Unit rusak',
+          ),
+          const SizedBox(height: 16),
+          _buildFacilityCard(
+            context,
+            'Penghapus',
+            '8 Unit tersedia',
+            '12 Unit dipinjam',
+            '0 Unit rusak',
           ),
         ],
       ),
