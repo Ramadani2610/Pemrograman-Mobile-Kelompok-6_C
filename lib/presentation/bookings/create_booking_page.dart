@@ -38,8 +38,9 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
       if (t != null) {
         setState(() {
           _start = DateTime(d.year, d.month, d.day, t.hour, t.minute);
-          if (!_end.isAfter(_start))
+          if (!_end.isAfter(_start)) {
             _end = _start.add(const Duration(hours: 1));
+          }
         });
       }
     }

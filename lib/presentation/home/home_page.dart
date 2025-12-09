@@ -523,8 +523,7 @@ class _HomePageState extends State<HomePage> {
               Navigator.pushNamed(context, '/home');
               break;
             case 1:
-              // Navigate to admin facilities so "Kelola Fasilitas" opens admin view
-              Navigator.pushNamed(context, '/admin_facilities');
+              Navigator.pushNamed(context, '/facilities');
               break;
             case 2:
               Navigator.pushNamed(context, '/notification');

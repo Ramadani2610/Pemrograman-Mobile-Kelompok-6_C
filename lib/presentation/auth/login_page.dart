@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_textfield.dart';
-import '../../core/widgets/gradient_widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
