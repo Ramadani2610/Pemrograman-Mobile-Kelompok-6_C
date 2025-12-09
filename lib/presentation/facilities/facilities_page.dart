@@ -3,7 +3,7 @@ import 'package:spareapp_unhas/data/models/facility.dart';
 import 'package:spareapp_unhas/presentation/facilities/facility_detail_page.dart';
 import 'package:spareapp_unhas/data/services/mock_facility_service.dart';
 import 'package:spareapp_unhas/core/widgets/bottom_nav_bar.dart';
-import 'package:spareapp_unhas/core/utils/no_animation_route.dart';
+
 
 const Color _primaryColor = Color(0xFFD32F2F);
 
@@ -284,18 +284,16 @@ class _FacilitiesPageState extends State<FacilitiesPage>
         return InkWell(
           onTap: () => Navigator.push(
             context,
-            NoAnimationPageRoute(
-              builder: (_) => FacilityDetailPage(facility: f),
-            ),
+            MaterialPageRoute(builder: (_) => FacilityDetailPage(facility: f)),
           ),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _primaryColor.withOpacity(0.6)),
+              border: Border.all(color: Color.fromRGBO(211, 47, 47, 0.6)), 
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Color.fromRGBO(0, 0, 0, 0.06), 
                   blurRadius: 6,
                   offset: const Offset(0, 4),
                 ),
