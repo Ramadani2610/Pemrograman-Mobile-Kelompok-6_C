@@ -1,14 +1,10 @@
 // main.dart
 
 import 'package:flutter/material.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:spareapp_unhas/firebase_options.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-
-// --- Perubahan di bagian ini: Penyesuaian Import Path ---
-// Sesuaikan import path sesuai dengan lokasi file di folder presentation/auth
+// Import halaman
 import 'package:spareapp_unhas/presentation/auth/splash_screen.dart';
 import 'package:spareapp_unhas/presentation/auth/login_page.dart';
 import 'package:spareapp_unhas/presentation/auth/forgot_password.dart';
@@ -20,27 +16,20 @@ import 'package:spareapp_unhas/presentation/facilities/admin_facilities_page.dar
 import 'package:spareapp_unhas/presentation/bookings/booking_history_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/review_booking.dart';
 
-// Definisi warna utama (jika belum didefinisikan secara global)
+// Import untuk admin pages tambahan
+import 'package:spareapp_unhas/presentation/facilities/admin_manage_facilities_page.dart';
+import 'package:spareapp_unhas/presentation/facilities/facility_detail_tabs_page.dart';
+
 const Color primaryColor = Color(0xFFD32F2F);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   // Inisialisasi locale Indonesia untuk intl
   await initializeDateFormatting('id_ID', null);
-  Intl.defaultLocale = 'id_ID'; // optional tapi bagus supaya konsisten
-
-  runApp(const MyApp());
-  // Firebase initialization disabled for now due to web compatibility issues
-  // Uncomment and properly configure after running: flutter pub global activate flutterfire_cli
-  // Then: flutterfire configure --project=spareapp-unhas-dev
-  /*
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
-  } catch (e) {
-    debugPrint('Firebase initialization error: $e');
-  }
-  */
-
+  Intl.defaultLocale = 'id_ID';
+  
+  // HANYA SATU runApp() di sini
   runApp(const MyApp());
 }
 
@@ -110,23 +99,20 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      // --- Definisikan Rute ---
       initialRoute: '/splash_screen',
       routes: {
-        // Panggil kelas widget yang telah diimport dari presentation/auth/
-        '/splash_screen': (context) => const SplashScreen(), // Splash Screen
-        '/login': (context) => const LoginPage(), // Login Page
-        '/home': (context) => const HomePage(), // Home Page
-        '/home_user': (context) => const UserHomePage(), // User Home Page
-        '/facilities': (context) => const FacilitiesPage(), // Facilities List
-        '/admin_facilities': (context) =>
-            const AdminFacilitiesPage(), // Admin Facilities
-        '/booking_history': (context) =>
-            const BookingHistoryPage(), // Booking History
-        '/forgot_password': (context) =>
-            const ForgotPasswordPage(), // Forgot Password Page
-        '/profile': (context) => const ProfilePage(), // Profile Page
-        '/notification': (context) => const ReviewBookingsPage(), // Notification for Review Booking Page
+        '/splash_screen': (context) => const SplashScreen(),
+        '/login': (context) => const LoginPage(),
+        '/home': (context) => const HomePage(),
+        '/home_user': (context) => const UserHomePage(),
+        '/facilities': (context) => const FacilitiesPage(),
+        '/admin_facilities': (context) => const AdminFacilitiesPage(),
+        '/admin_manage_facilities': (context) => const AdminManageFacilitiesPage(), // TAMBAHKAN
+        '/facility_detail_tabs': (context) => const FacilityDetailTabsPage(facilityName: ''), // TAMBAHKAN
+        '/booking_history': (context) => const BookingHistoryPage(),
+        '/forgot_password': (context) => const ForgotPasswordPage(),
+        '/profile': (context) => const ProfilePage(),
+        '/notification': (context) => const ReviewBookingsPage(),
       },
     );
   }
