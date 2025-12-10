@@ -21,7 +21,9 @@ import 'package:spareapp_unhas/presentation/facilities/facility_detail_tabs_page
 import 'package:spareapp_unhas/presentation/bookings/booking_history_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/booking_history_user.dart';
 import 'package:spareapp_unhas/presentation/bookings/review_booking.dart';
+import 'package:spareapp_unhas/presentation/bookings/user_notification.dart';
 import 'package:spareapp_unhas/presentation/manage/manage_page.dart';
+import 'package:spareapp_unhas/presentation/manage/manage_user.dart';
 import 'package:spareapp_unhas/presentation/class/main_classroom.dart';
 import 'package:spareapp_unhas/presentation/class/class_schedule.dart';
 import 'package:spareapp_unhas/presentation/class/search_classroom.dart';
@@ -75,6 +77,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(), // ADMIN HOME PAGE
         '/home_user': (context) => const UserHomePage(), // USER HOME PAGE
         // FACILITIES
+      
         '/admin_facilities': (context) =>
             const AdminFacilitiesPage(), // ADMIN FACILITIES PAGE
         '/facility_detail_tabs': (context) =>
@@ -88,10 +91,13 @@ class MyApp extends StatelessWidget {
             const BookingHistoryUserPage(), // BOOKING HISTORY USER PAGE
         '/notification': (context) =>
             const ReviewBookingsPage(), // REVIEW BOOKINGS PAGE
+        '/user_notification': (context) =>
+            const UserNotificationsPage(), // USER NOTIFICATION PAGE
         // PROFILE
         '/profile': (context) => const ProfilePage(), // PROFILE PAGE
         // MANAGE
         '/manage': (context) => const ManagePage(), // MANAGE PAGE
+        '/manage_user' : (context) => const UserManagePage(), // MANAGE USER PAGE
         // CLASSROOM
         '/main_classroom': (context) =>
             const MainClassroomPage(), // MAIN CLASSROOM PAGE
