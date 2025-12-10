@@ -6,8 +6,7 @@ import 'package:intl/intl.dart';
 
 // --- IMPORT WAJIB UNTUK DATA USER ---
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahkan ini
-import 'package:spareapp_unhas/data/services/route_guard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spareapp_unhas/data/services/auth_service.dart';
 // ------------------------------------
 
@@ -23,8 +22,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _showProfileMenu = false;
+  int _currentCarouselIndex = 0;
   int _selectedIndex = 0;
+  late PageController _pageController;
+  bool _showProfileMenu = false;
+
 
   // Variabel Data User Dinamis
   String _currentName = 'Admin';
@@ -35,12 +37,20 @@ class _HomePageState extends State<HomePage> {
   DateTime _now = DateTime.now();
   Timer? _timer;
 
+  final List<String> _campusImages = [
+    'lib/assets/pictures/campus1.jpg',
+    'lib/assets/pictures/campus2.jpg',
+    'lib/assets/pictures/campus3.jpg',
+    'lib/assets/pictures/campus4.jpg',
+  ];
+
   // Calendar events
   final Map<DateTime, Map<String, dynamic>> _eventsMap = {};
   Map<String, dynamic>? _selectedEvent;
   DateTime? _selectedEventDate;
   DateTime _displayMonth = DateTime.now();
   OverlayEntry? _popupOverlay;
+  
 
   @override
   void initState() {
@@ -48,6 +58,9 @@ class _HomePageState extends State<HomePage> {
 
     // 1. PANGGIL LISTENER REALTIME
     _listenToUserData();
+
+    _pageController = PageController(viewportFraction: 0.85);
+    Future.delayed(const Duration(seconds: 3), _autoPlayCarousel);
 
     _now = DateTime.now();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -123,6 +136,18 @@ class _HomePageState extends State<HomePage> {
     if (_popupOverlay != null) {
       _popupOverlay!.remove();
       _popupOverlay = null;
+    }
+  }
+
+  void _autoPlayCarousel() {
+    if (mounted) {
+      final nextPage = (_currentCarouselIndex + 1) % _campusImages.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      Future.delayed(const Duration(seconds: 5), _autoPlayCarousel);
     }
   }
 
@@ -256,35 +281,10 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 20),
 
-                    // Statistics header
-                    Text(
-                      'Statistik Peminjaman',
-                      style: AppTextStyles.body1.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(color: AppColors.cardShadow, blurRadius: 8),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Chart Placeholder',
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.mainGradientEnd,
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildCarouselSection(),
+
                     const SizedBox(height: 20),
 
                     // Calendar header with month navigation
@@ -588,6 +588,64 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
+
+  Widget _buildCarouselSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Galeri Kampus',
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontSize: 18,
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 200,
+            child: Stack(
+              children: [
+                PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) =>
+                      setState(() => _currentCarouselIndex = index),
+                  itemCount: _campusImages.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.grey[200],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          _campusImages[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, _) =>
+                              Container(color: Colors.grey[200]),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _facilityCard(String title, String subtitle, String imagePath) {
     return GestureDetector(
