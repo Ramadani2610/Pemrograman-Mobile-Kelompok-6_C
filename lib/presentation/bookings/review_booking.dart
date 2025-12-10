@@ -322,7 +322,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
               Navigator.pushNamed(context, '/home');
               break;
             case 1:
-              Navigator.pushNamed(context, '/facilities');
+              Navigator.pushNamed(context, '/manage');
             case 2:
               // Already on notification page
               break;

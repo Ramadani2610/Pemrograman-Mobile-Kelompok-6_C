@@ -9,7 +9,7 @@ class AppTextStyles {
   // HEADINGS
   static const TextStyle heading1 = TextStyle(
     fontFamily: _fontFamily,
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: FontWeight.w700,
     height: 48 / 32,
     color: AppColors.titleText,
@@ -18,7 +18,7 @@ class AppTextStyles {
   // Sub judul / section title 
   static const TextStyle heading2 = TextStyle(
     fontFamily: _fontFamily,
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: FontWeight.w700,
     height: 48 / 24,
     color: AppColors.titleText,
@@ -27,7 +27,7 @@ class AppTextStyles {
   // Judul kecil / Card Title
   static const TextStyle heading3 = TextStyle(
     fontFamily: _fontFamily,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: FontWeight.w600,
     height: 32 / 18,
   );
@@ -35,7 +35,7 @@ class AppTextStyles {
   // Highlight Title User
   static const TextStyle highlightTitle = TextStyle(
     fontFamily: _fontFamily,
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: FontWeight.w700,
     height: 38 / 32,
   );
@@ -82,7 +82,7 @@ class AppTextStyles {
   /// Button kecil 
   static const TextStyle button2 = TextStyle(
     fontFamily: _fontFamily,
-    fontSize: 8,
+    fontSize: 12,
     fontWeight: FontWeight.w500, 
     height: 12 / 8,              
     letterSpacing: 0.3,

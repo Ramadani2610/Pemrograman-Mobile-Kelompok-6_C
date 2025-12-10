@@ -44,7 +44,8 @@ class AppColors {
   // CARD TEMPLATE
   static const Color cardBackground = Colors.white;
   static const Color cardBorder = Color(0xFFAD0001);
-  static const Color cardShadow = Color(0x5CBB452F);
+  static const Color cardShadow = Color(0xFF979797);
+  static const Color redTrans = Color(0x5CBB452F);
 
   // CLASS CATEGORY : NON-CLASS
   static const Color nonClassColor = Color(0xFF979797);

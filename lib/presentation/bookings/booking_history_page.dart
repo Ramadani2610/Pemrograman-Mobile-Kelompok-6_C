@@ -138,10 +138,10 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
               Navigator.pushNamed(context, '/home');
               break;
             case 1:
-              Navigator.pushNamed(context, '/facilities');
+              Navigator.pushNamed(context, '/manage');
               break;
             case 2:
-              Navigator.pushNamed(context, '/review_booking');
+              Navigator.pushNamed(context, '/notification');
               break;
             case 3:
               // already here

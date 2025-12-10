@@ -121,20 +121,19 @@ class ManagePage extends StatelessWidget {
         onItemTapped: (index) {
           switch (index) {
             case 0:
-              Navigator.pushReplacementNamed(context, '/home');
+              Navigator.pushNamed(context, '/home');
               break;
             case 1:
               // sudah di halaman Kelola
               break;
             case 2:
-              // misalnya ke halaman Tinjau Peminjaman (notifikasi)
-              Navigator.pushReplacementNamed(context, '/review_booking');
+              Navigator.pushNamed(context, '/notification');
               break;
             case 3:
-              Navigator.pushReplacementNamed(context, '/booking_history');
+              Navigator.pushNamed(context, '/booking_history');
               break;
             case 4:
-              Navigator.pushReplacementNamed(context, '/profile');
+              Navigator.pushNamed(context, '/profile');
               break;
           }
         },

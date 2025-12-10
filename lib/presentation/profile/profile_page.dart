@@ -215,10 +215,10 @@ class ProfilePage extends StatelessWidget {
               Navigator.pushNamed(context, '/home');
               break;
             case 1:
-              Navigator.pushNamed(context, '/facilities');
+              Navigator.pushNamed(context, '/manage');
               break;
             case 2:
-              // Notifications page (to be implemented)
+              Navigator.pushNamed(context, '/notification');
               break;
             case 3:
               Navigator.pushNamed(context, '/booking_history');
