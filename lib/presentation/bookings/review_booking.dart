@@ -230,9 +230,10 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     // 3) Simpan ke service + alasan
     final ok = _bookingService.reject(
       booking.id,
-      'admin001',
       reason: reason,
+      rejectedBy: 'admin001',
     );
+
     if (!ok) {
       _showSnack('Gagal menolak peminjaman.', isError: true);
       return;
@@ -241,6 +242,58 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     _loadData();
     _showSnack('Peminjaman telah ditolak.');
   }
+
+  // ========= INPUT WAKTU PENGEMBALIAN (KHUSUS FASILITAS) =========
+
+  Future<DateTime?> _pickReturnTime(Booking booking) async {
+    final now = DateTime.now();
+
+    final initialTime = TimeOfDay.fromDateTime(now);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      helpText: 'Pilih Waktu Pengembalian',
+      builder: (context, child) {
+        // opsional: sedikit styling
+        return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              hourMinuteShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              dayPeriodShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked == null) return null;
+
+    // Asumsikan tanggal pengembalian = hari ini
+    final returnedAt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      picked.hour,
+      picked.minute,
+    );
+
+    // Contoh validasi sederhana: tidak boleh sebelum waktu mulai booking
+    if (returnedAt.isBefore(booking.startDate)) {
+      _showSnack(
+        'Waktu pengembalian tidak boleh sebelum waktu mulai peminjaman.',
+        isError: true,
+      );
+      return null;
+    }
+
+    return returnedAt;
+  }
+
 
   Future<void> _markAsReturned(Booking booking) async {
     final confirmed = await _showConfirmDialog(
@@ -255,7 +308,10 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
       return;
     }
 
-    final ok = _bookingService.markReturned(booking.id, 'admin001');
+    final ok = _bookingService.markReturned(
+      booking.id,
+      returnedBy: 'admin001',
+    );
     if (!ok) {
       _showSnack('Gagal memperbarui status peminjaman.', isError: true);
       return;
@@ -264,6 +320,51 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     _loadData();
     _showSnack('Status peminjaman berhasil ditandai selesai.');
   }
+
+
+  Future<void> _markAsReturnedFacility(Booking booking) async {
+    // 1. Minta waktu pengembalian terlebih dahulu
+    final returnedAt = await _pickReturnTime(booking);
+    if (returnedAt == null) {
+      // sudah di-handle snack di _pickReturnTime kalau invalid / batal
+      return;
+    }
+
+    final formattedTime = _timeFormatter.format(returnedAt);
+
+    // 2. Konfirmasi dengan menampilkan waktu pengembalian
+    final confirmed = await _showConfirmDialog(
+      title: 'Tandai Selesai (Fasilitas)?',
+      message:
+          'Fasilitas akan ditandai sudah dikembalikan pada pukul $formattedTime.\n'
+          'Pastikan data sudah benar sebelum melanjutkan.',
+      confirmLabel: 'Ya, Simpan',
+    );
+
+    if (confirmed != true) {
+      _showSnack('Perubahan status dibatalkan.');
+      return;
+    }
+
+    // 3. Simpan perubahan ke service
+    final ok = _bookingService.markReturned(
+      booking.id,
+      actualReturnTime: returnedAt,
+      returnedBy: 'admin001',
+    );
+
+    if (!ok) {
+      _showSnack('Gagal memperbarui status peminjaman.', isError: true);
+      return;
+    }
+
+    _loadData();
+    _showSnack(
+      'Peminjaman fasilitas ditandai selesai pada pukul $formattedTime.',
+    );
+  }
+
+
 
   // ========= DIALOG & SNACKBAR =========
 
@@ -698,8 +799,13 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     Booking booking, {
     required bool isFacility,
   }) {
-    final room = _roomsById[booking.roomId];
-    final facility = isFacility ? _facilitiesById[booking.facilityId] : null;
+    final room = booking.roomId != null
+      ? _roomsById[booking.roomId!]   // aman karena sudah dicek != null
+      : null;
+
+    final facility = isFacility && booking.facilityId != null
+        ? _facilitiesById[booking.facilityId!] 
+        : null;
 
     final statusColor = _statusColor(booking);
     final statusLabel = _statusLabel(booking);
@@ -731,7 +837,15 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
           label: 'Tandai Selesai',
           gradient: AppColors.greenGradient,
           textColor: Colors.white,
-          onTap: () => _markAsReturned(booking),
+          onTap: () {
+            if (isFacility) {
+              // KHUSUS FASILITAS → wajib isi waktu pengembalian
+              _markAsReturnedFacility(booking);
+            } else {
+              // Kelas tetap seperti biasa
+              _markAsReturned(booking);
+            }
+          },
         ),
       );
     }
