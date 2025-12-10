@@ -1,3 +1,6 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import 'route_guard.dart';
+
 /// Service untuk validasi login SSO UNHAS
 /// Username bisa berupa NIM (format: angka) atau "admin1"
 /// Password untuk admin1 adalah "admin123"
@@ -67,5 +70,21 @@ class AuthService {
   static bool isValidNIM(String nim) {
     // Cek apakah hanya berisi digit dan panjangnya 8
     return nim.length == nimLength && int.tryParse(nim) != null;
+  }
+
+  /// Logout: bersihkan session dan credential yang tersimpan
+  static Future<void> logout() async {
+    try {
+      // Hapus user session dari RouteGuard
+      await RouteGuard.clearUserInfo();
+
+      // Hapus saved credentials dari SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('remember_me');
+      await prefs.remove('saved_username');
+      await prefs.remove('saved_password');
+    } catch (e) {
+      // ignore errors during logout cleanup
+    }
   }
 }
