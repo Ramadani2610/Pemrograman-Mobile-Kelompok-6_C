@@ -12,8 +12,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
 
-const Color primaryColor = Color(0xFFD32F2F);
-const Color backgroundColor = Color(0xFFF8F9FA);
+const Color primaryColor = AppColors.mainGradientStart;
+const Color backgroundColor = AppColors.backgroundColor;
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -286,29 +286,11 @@ class _UserHomePageState extends State<UserHomePage> {
             ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: (int index) {
-          setState(() => _selectedIndex = index);
-          switch (index) {
-            case 0:
-              // Sudah di home
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/facilities');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/notification');
-              break;
-            case 3:
-              Navigator.pushNamed(context, '/booking_history');
-              break;
-            case 4:
-              Navigator.pushNamed(context, '/profile');
-              break;
-          }
-        },
+      bottomNavigationBar: const BottomNavBar(
+        selectedIndex: 0,
+        useRoleRouting: true,
       ),
+
     );
   }
 
@@ -369,15 +351,6 @@ class _UserHomePageState extends State<UserHomePage> {
                   ),
                 ],
               ),
-            ),
-          ),
-
-          IconButton(
-            onPressed: () => Navigator.pushNamed(context, '/chat'),
-            icon: Icon(
-              Icons.chat_bubble_outline,
-              color: Colors.grey[700],
-              size: 28,
             ),
           ),
         ],
@@ -538,37 +511,41 @@ class _UserHomePageState extends State<UserHomePage> {
   Widget _buildStatsSection() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 15,
-            spreadRadius: 2,
+            color: AppColors.cardShadow,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Statistik Peminjaman',
-            style: TextStyle(
-              color: Colors.grey[800],
-              fontSize: 18,
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.body1.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.titleText,
             ),
           ),
           const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatCard('15', 'Peminjaman\nAktif', Icons.event_note),
+              const SizedBox(width: 8),
               _buildStatCard('7', 'Fasilitas\nTersedia', Icons.devices),
-              _buildStatCard('3', 'Menunggu\nKonfirmasi', Icons.schedule),
+              const SizedBox(width: 8),
+              _buildStatCard(
+                '3',
+                'Menunggu\nKonfirmasi',
+                Icons.schedule,
+              ),
             ],
           ),
         ],
@@ -576,40 +553,64 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
+
   Widget _buildStatCard(String value, String label, IconData icon) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: primaryColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: primaryColor, size: 24),
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.cardShadow,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: primaryColor,
-            fontFamily: 'Poppins',
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icon bulat dengan gradient (sama gaya dengan komponen lain)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppColors.mainGradient,
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Angka besar
+            Text(
+              value,
+              style: AppTextStyles.heading3.copyWith(
+                color: AppColors.mainGradientStart,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Label kecil dua baris
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.secondaryText,
+                height: 1.3,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontFamily: 'Poppins',
-          ),
-        ),
-      ],
+      ),
     );
   }
+
 
   Widget _buildPopularFacilities() {
     final List<Map<String, dynamic>> facilities = [
@@ -754,45 +755,107 @@ class _UserHomePageState extends State<UserHomePage> {
     final int itemCount = rowCount * 7;
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: AppColors.cardShadow,
             blurRadius: 8,
-            spreadRadius: 2,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Text(
-              DateFormat('MMMM yyyy').format(_displayMonth),
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-                fontFamily: 'Poppins',
+          // Header bulan + navigasi kiri/kanan
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Kalender Akademik',
+                style: AppTextStyles.body1.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
+              Row(
+                children: [
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      setState(() {
+                        _displayMonth = DateTime(
+                          _displayMonth.year,
+                          _displayMonth.month - 1,
+                          1,
+                        );
+                      });
+                    },
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: AppColors.mainGradientStart,
+                    ),
+                  ),
+                  Text(
+                    DateFormat.yMMMM().format(_displayMonth),
+                    style: AppTextStyles.body2.copyWith(
+                      color: _displayMonth.year == 2025 &&
+                              _displayMonth.month == 12
+                          ? Colors.red
+                          : AppColors.titleText,
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      setState(() {
+                        _displayMonth = DateTime(
+                          _displayMonth.year,
+                          _displayMonth.month + 1,
+                          1,
+                        );
+                      });
+                    },
+                    icon: Icon(
+                      Icons.chevron_right,
+                      color: AppColors.mainGradientStart,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 8),
+
+          // Header hari (S S R K J S M)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Expanded(child: Center(child: Text('S'))),
+              Expanded(child: Center(child: Text('S'))),
+              Expanded(child: Center(child: Text('R'))),
+              Expanded(child: Center(child: Text('K'))),
+              Expanded(child: Center(child: Text('J'))),
+              Expanded(child: Center(child: Text('S'))),
+              Expanded(child: Center(child: Text('M'))),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Grid tanggal (stylenya sama dengan HomePage)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              childAspectRatio: 1.0,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
+              childAspectRatio: 1,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 8,
             ),
             itemCount: itemCount,
             itemBuilder: (context, index) {
-              final dayOffset = index - firstDayIndex;
+              final int dayOffset = index - firstDayIndex;
               final DateTime cellDate = DateTime(year, month, 1 + dayOffset);
 
               final bool isCurrentMonth =
@@ -816,81 +879,111 @@ class _UserHomePageState extends State<UserHomePage> {
               if (isToday) {
                 textColor = Colors.white;
               } else if (isCurrentMonth) {
-                textColor = Colors.black;
+                textColor = AppColors.titleText;
               } else {
                 textColor = Colors.grey.withOpacity(0.45);
               }
 
               return GestureDetector(
-                onTap: isCurrentMonth
-                    ? () {
-                        if (hasEvent) {
-                          setState(() {
-                            _selectedEventDate = eventKey;
-                            _selectedEvent = _eventsMap[eventKey];
-                          });
-                          _showPopupOverlay(
-                            context,
-                            eventKey,
-                            _eventsMap[eventKey]!,
-                          );
-                        } else {
-                          setState(() {
-                            _selectedEventDate = null;
-                            _selectedEvent = null;
-                          });
-                        }
-                      }
-                    : null,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isCurrentMonth ? Colors.white : Colors.transparent,
-                    border: Border.all(
-                      color: isToday
-                          ? primaryColor.withOpacity(0.8)
-                          : isCurrentMonth
-                          ? Colors.grey.shade300
-                          : Colors.transparent,
-                      width: isToday ? 2 : 1,
-                    ),
-                  ),
+                onTap: () {
+                  _removePopup();
+                  if (hasEvent) {
+                    setState(() {
+                      _selectedEventDate = eventKey;
+                      _selectedEvent = _eventsMap[eventKey];
+                    });
+                    _showPopupOverlay(context, eventKey, _eventsMap[eventKey]!);
+                  } else {
+                    setState(() {
+                      _selectedEventDate = null;
+                      _selectedEvent = null;
+                    });
+                  }
+                },
+                child: Center(
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       if (isToday)
                         Container(
-                          width: 28,
-                          height: 28,
-                          decoration: const BoxDecoration(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: primaryColor,
+                            gradient: AppColors.mainGradient,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.mainGradientStart
+                                    .withOpacity(0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                           ),
-                        ),
-                      Center(
-                        child: Text(
-                          isCurrentMonth ? dayText : '',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isToday
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isToday ? Colors.white : textColor,
-                            fontFamily: 'Poppins',
+                          child: Center(
+                            child: Text(
+                              dayText,
+                              style: AppTextStyles.body2.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      if (hasEvent)
-                        Positioned(
-                          bottom: 2,
+                        )
+                      else if (isCurrentMonth)
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: AppColors.mainGradient,
+                          ),
                           child: Container(
-                            width: 4,
-                            height: 4,
+                            margin: const EdgeInsets.all(1.8),
                             decoration: const BoxDecoration(
                               shape: BoxShape.circle,
-                              color: primaryColor,
+                              color: Colors.white,
+                            ),
+                            child: Center(
+                              child: Text(
+                                dayText,
+                                style: AppTextStyles.body2.copyWith(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey.withOpacity(0.22),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              dayText,
+                              style: AppTextStyles.caption.copyWith(
+                                color: textColor,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      if (hasEvent)
+                        Positioned(
+                          bottom: 4,
+                          child: Container(
+                            width: 5,
+                            height: 5,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.mainGradientStart,
                             ),
                           ),
                         ),
@@ -904,6 +997,7 @@ class _UserHomePageState extends State<UserHomePage> {
       ),
     );
   }
+
 
   void _showPopupOverlay(
     BuildContext context,
