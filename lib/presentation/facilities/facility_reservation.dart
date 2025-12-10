@@ -5,6 +5,8 @@ import 'package:dropdown_search/dropdown_search.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/gradient_widgets.dart';
+import '../../core/widgets/date_time_picker.dart';
+import '../../core/widgets/app_dialogs.dart';
 
 class FacilityReservationPage extends StatefulWidget {
   const FacilityReservationPage({super.key});
@@ -48,8 +50,8 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
-    final result = await showDatePicker(
-      context: context,
+    final result = await showAppDatePicker(
+      context,
       initialDate: _selectedDate ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 2),
@@ -61,8 +63,8 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
 
   Future<void> _pickPickupTime() async {
     final now = TimeOfDay.now();
-    final result = await showTimePicker(
-      context: context,
+    final result = await showAppTimePicker(
+      context,
       initialTime: _pickupTime ?? now,
     );
     if (result != null) {
@@ -112,7 +114,8 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
   Future<void> _onSubmit() async {
     final errorMessage = _validateForm();
     if (errorMessage != null) {
-      await _showInfoDialog(
+      await showAppInfoDialog(
+        context,
         title: 'Data Belum Lengkap',
         message: errorMessage,
       );
@@ -120,7 +123,8 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
     }
 
     // Trigger warning / konfirmasi
-    final confirmed = await _showConfirmDialog(
+    final confirmed = await showAppConfirmDialog(
+      context,
       title: 'Ajukan Peminjaman Fasilitas?',
       message:
           'Pastikan tanggal, waktu ambil, ruang kelas, dan fasilitas yang '
@@ -142,7 +146,8 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
     //   facilities: _selectedFacilities.toList(),
     // );
 
-    await _showInfoDialog(
+    await showAppInfoDialog(
+      context,
       title: 'Berhasil',
       message:
           'Peminjaman fasilitas berhasil diajukan.\n'
@@ -154,7 +159,8 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
   }
 
   Future<void> _onCancel() async {
-    final confirmed = await _showConfirmDialog(
+    final confirmed = await showAppConfirmDialog(
+      context,
       title: 'Batalkan Peminjaman?',
       message:
           'Proses pengisian reservasi fasilitas akan dibatalkan. '
@@ -163,93 +169,14 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
     );
     if (confirmed != true) return;
 
-    await _showInfoDialog(
+    await showAppInfoDialog(
+      context,
       title: 'Dibatalkan',
       message: 'Peminjaman fasilitas batal diajukan.',
     );
 
     if (!mounted) return;
     Navigator.pop(context);
-  }
-
-  Future<bool?> _showConfirmDialog({
-    required String title,
-    required String message,
-    required String confirmLabel,
-  }) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            title,
-            style: AppTextStyles.heading3,
-          ),
-          content: Text(
-            message,
-            style: AppTextStyles.body2,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'Tidak',
-                style: AppTextStyles.button2.copyWith(
-                  color: AppColors.secondaryText,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                confirmLabel,
-                style: AppTextStyles.button2.copyWith(
-                  color: AppColors.mainGradientStart,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _showInfoDialog({
-    required String title,
-    required String message,
-  }) {
-    return showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            title,
-            style: AppTextStyles.heading3,
-          ),
-          content: Text(
-            message,
-            style: AppTextStyles.body2,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Tutup',
-                style: AppTextStyles.button2.copyWith(
-                  color: AppColors.mainGradientStart,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   // ====== BUILD ======
