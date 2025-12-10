@@ -400,27 +400,27 @@ class _HomePageState extends State<HomePage> {
                           _facilityCard(
                             'Paket Fasilitas',
                             '15 Terpinjam',
-                            'lib/assets/icons/facility1.jpg',
+                            'lib/assets/icons/proyektor.jpg',
                           ),
                           _facilityCard(
                             'Remote Tv',
                             '5 Terpinjam',
-                            'lib/assets/icons/facility2.jpg',
+                            'lib/assets/icons/remote-tv.jpg',
                           ),
                           _facilityCard(
                             'Kabel Terminal',
                             '4 Terpinjam',
-                            'lib/assets/icons/facility3.jpg',
+                            'lib/assets/icons/terminal colokan.jpg',
                           ),
                           _facilityCard(
                             'Spidol',
                             '2 Terpinjam',
-                            'lib/assets/icons/facility4.jpg',
+                            'lib/assets/icons/spidol.jpeg',
                           ),
                           _facilityCard(
                             'Kabel HDMI',
                             '0 Terpinjam',
-                            'lib/assets/icons/facility5.jpg',
+                            'lib/assets/icons/kabel hdmi.jpg',
                           ),
                         ],
                       ),
@@ -646,267 +646,172 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCalendar() {
     final year = _displayMonth.year;
     final month = _displayMonth.month;
+
     final firstDay = DateTime(year, month, 1);
-    final firstWeekday = firstDay.weekday; // 1 (Senin) sampai 7 (Minggu)
-    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final int firstDayIndex =
+        firstDay.weekday - 1; // Monday=1 → index 0, cocok dg header S S R K J S M
+    final int daysInMonth = DateTime(year, month + 1, 0).day;
 
-    // Cek apakah bulan yang ditampilkan adalah Desember 2025
-    final bool isDecember2025 = year == 2025 && month == 12;
+    // Banyak cell yang benar-benar dibutuhkan (leading + days in month)
+    final int totalNeeded = firstDayIndex + daysInMonth;
+    // Banyak baris yang dibutuhkan (tanpa baris kosong di bawah)
+    final int rowCount = (totalNeeded / 7).ceil();
+    final int itemCount = rowCount * 7; // isi full per baris
 
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            spreadRadius: 2,
-          ),
-        ],
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1,
+        mainAxisSpacing: 6,   // jarak vertikal = jarak horizontal
+        crossAxisSpacing: 8,
       ),
-      child: Column(
-        children: [
-          // Header bulan dengan bulatan besar di tengah
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.red.withOpacity(0.1),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                _displayMonth.month.toString().padLeft(2, '0'),
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        // Bisa ke bulan sebelum / sesudah
+        final int dayOffset = index - firstDayIndex;
+        final DateTime cellDate = DateTime(year, month, 1 + dayOffset);
 
-          // Grid kalender dengan ukuran lebih kecil
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              childAspectRatio: 1.0,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
-            ),
-            itemCount: 42, // 6 minggu * 7 hari
-            itemBuilder: (context, index) {
-              // Hitung tanggal untuk sel ini
-              final dayOffset =
-                  index -
-                  (firstWeekday -
-                      2); // Disesuaikan agar Minggu di kolom pertama
-              final bool isCurrentMonth =
-                  dayOffset >= 0 && dayOffset < daysInMonth;
-              final dayNumber = isCurrentMonth ? dayOffset + 1 : 0;
+        final bool isCurrentMonth =
+            cellDate.year == year && cellDate.month == month;
 
-              DateTime? cellDate;
-              if (isCurrentMonth) {
-                cellDate = DateTime(year, month, dayNumber);
-              }
+        final bool isToday =
+            cellDate.year == _now.year &&
+            cellDate.month == _now.month &&
+            cellDate.day == _now.day;
 
-              // Cek apakah hari ini
-              final isToday =
-                  cellDate != null &&
-                  cellDate.year == _now.year &&
-                  cellDate.month == _now.month &&
-                  cellDate.day == _now.day;
+        final DateTime eventKey =
+            DateTime(cellDate.year, cellDate.month, cellDate.day);
+        final bool hasEvent = _eventsMap.containsKey(eventKey);
 
-              // Cek apakah ada event
-              DateTime? eventKey;
-              if (cellDate != null) {
-                eventKey = DateTime(
-                  cellDate.year,
-                  cellDate.month,
-                  cellDate.day,
-                );
-              }
-              final hasEvent =
-                  eventKey != null && _eventsMap.containsKey(eventKey);
+        final String dayText = cellDate.day.toString();
 
-              return GestureDetector(
-                onTap: isCurrentMonth
-                    ? () {
-                        _removePopup();
-                        if (cellDate != null) {
-                          final keyDate = DateTime(
-                            cellDate.year,
-                            cellDate.month,
-                            cellDate.day,
-                          );
-                          if (_eventsMap.containsKey(keyDate)) {
-                            setState(() {
-                              _selectedEventDate = keyDate;
-                              _selectedEvent = _eventsMap[keyDate];
-                            });
+        Color textColor;
+        if (isToday) {
+          textColor = Colors.white;
+        } else if (isCurrentMonth) {
+          textColor = AppColors.titleText;
+        } else {
+          textColor = Colors.grey.withOpacity(0.45); // abu-abu transparan
+        }
 
-                            // Tampilkan popup overlay
-                            _showPopupOverlay(
-                              context,
-                              keyDate,
-                              _eventsMap[keyDate]!,
-                            );
-                          } else {
-                            setState(() {
-                              _selectedEvent = null;
-                              _selectedEventDate = null;
-                            });
-                          }
-                        }
-                      }
-                    : null,
-                child: Container(
-                  margin: const EdgeInsets.all(1),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Container utama
-                      Container(
-                        width: 28, // Ukuran lebih kecil
-                        height: 28, // Ukuran lebih kecil
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isCurrentMonth
-                              ? Colors.white
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: isToday
-                                ? Colors.red.withOpacity(
-                                    0.8,
-                                  ) // Border merah untuk hari ini
-                                : isCurrentMonth
-                                ? Colors
-                                      .grey
-                                      .shade300 // Border abu-abu tipis untuk hari aktif
-                                : Colors.transparent,
-                            width: isToday ? 2 : 1,
-                          ),
-                          gradient: isToday
-                              ? LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.red.withOpacity(0.1),
-                                    Colors.white,
-                                  ],
-                                )
-                              : null,
-                        ),
-                        child: Center(
-                          child: Text(
-                            isCurrentMonth ? dayNumber.toString() : '',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isToday
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isCurrentMonth
-                                  ? (isToday
-                                        ? Colors
-                                              .red // Warna merah untuk hari ini
-                                        : isDecember2025 && dayOffset < 0
-                                        ? Colors
-                                              .grey // Warna abu-abu untuk hari sebelum Desember 2025
-                                        : Colors.black)
-                                  : Colors.transparent,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Titik merah untuk menandai event (ditempatkan di bawah)
-                      if (hasEvent && isCurrentMonth)
-                        Positioned(
-                          bottom: 1,
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Legenda
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Legenda hari ini
-              Row(
-                children: [
+        return GestureDetector(
+          onTap: () {
+            _removePopup();
+            if (hasEvent) {
+              setState(() {
+                _selectedEventDate = eventKey;
+                _selectedEvent = _eventsMap[eventKey];
+              });
+              _showPopupOverlay(context, eventKey, _eventsMap[eventKey]!);
+            } else {
+              setState(() {
+                _selectedEventDate = null;
+                _selectedEvent = null;
+              });
+            }
+          },
+          child: Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Hari ini
+                if (isToday)
                   Container(
-                    width: 12,
-                    height: 12,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.red, width: 2),
-                      color: Colors.white,
+                      gradient: AppColors.mainGradient,
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              AppColors.mainGradientStart.withOpacity(0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Hari Ini',
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 12),
-
-              // Legenda event
-              Row(
-                children: [
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey.shade300),
+                    child: Center(
+                      child: Text(
+                        dayText,
+                        style: AppTextStyles.body2.copyWith(
                           color: Colors.white,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        child: Container(
-                          width: 3,
-                          height: 3,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.red,
+                    ),
+                  )
+                // Tanggal bulan yang sedang ditampilkan
+                else if (isCurrentMonth)
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.mainGradient,
+                    ),
+                    child: Container(
+                      margin: const EdgeInsets.all(1.8),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: Center(
+                        child: Text(
+                          dayText,
+                          style: AppTextStyles.body2.copyWith(
+                            color: textColor,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                    ],
+                    ),
+                  )
+                // Tanggal bulan lain (leading/trailing days)
+                else
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.grey.withOpacity(0.22),
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        dayText,
+                        style: AppTextStyles.caption.copyWith(
+                          color: textColor,
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            ],
+
+                // Titik event
+                if (hasEvent)
+                  Positioned(
+                    bottom: 4,
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.mainGradientStart,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+
+
 
   void _showPopupOverlay(
     BuildContext context,
