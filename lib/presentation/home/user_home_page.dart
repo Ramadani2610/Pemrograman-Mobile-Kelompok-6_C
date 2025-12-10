@@ -1,11 +1,13 @@
-// lib/presentation/home/user_home_page.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:spareapp_unhas/data/services/route_guard.dart';
 import 'package:spareapp_unhas/data/services/auth_service.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
@@ -26,11 +28,15 @@ class _UserHomePageState extends State<UserHomePage> {
   late PageController _pageController;
   bool _showProfileMenu = false;
 
-  // Untuk waktu real-time
+  // --- DATA USER DINAMIS ---
+  String _displayName = 'Loading...';
+  String _displayRole = '';
+  String? _photoUrl; // Variable untuk link foto
+  // -------------------------
+
   DateTime _now = DateTime.now();
   Timer? _timer;
 
-  // Calendar events
   final Map<DateTime, Map<String, dynamic>> _eventsMap = {};
   Map<String, dynamic>? _selectedEvent;
   DateTime? _selectedEventDate;
@@ -47,19 +53,17 @@ class _UserHomePageState extends State<UserHomePage> {
   @override
   void initState() {
     super.initState();
+    _listenToUserData(); // Panggil fungsi listener realtime
+
     _pageController = PageController(viewportFraction: 0.85);
     Future.delayed(const Duration(seconds: 3), _autoPlayCarousel);
 
-    // Inisialisasi waktu real-time
     _now = DateTime.now();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
     });
 
-    // Set displayed month to December 2025
     _displayMonth = DateTime(2025, 12, 1);
-
-    // Add example events for December 2025
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         _eventsMap[DateTime(2025, 12, 1)] = {
@@ -70,32 +74,46 @@ class _UserHomePageState extends State<UserHomePage> {
           'title': 'Ujian Akhir Semester',
           'date': '2025-12-05',
         };
-        _eventsMap[DateTime(2025, 12, 10)] = {
-          'title': 'Seminar Hasil Penelitian',
-          'date': '2025-12-10',
-        };
-        _eventsMap[DateTime(2025, 12, 15)] = {
-          'title': 'Yudisium',
-          'date': '2025-12-15',
-        };
-        _eventsMap[DateTime(2025, 12, 18)] = {
-          'title': 'Wisuda Periode Desember',
-          'date': '2025-12-18',
-        };
-        _eventsMap[DateTime(2025, 12, 20)] = {
-          'title': 'Libur Semester',
-          'date': '2025-12-20',
-        };
-        _eventsMap[DateTime(2025, 12, 25)] = {
-          'title': 'Libur Natal',
-          'date': '2025-12-25',
-        };
-        _eventsMap[DateTime(2025, 12, 31)] = {
-          'title': 'Tutup Tahun Akademik',
-          'date': '2025-12-31',
-        };
       });
     });
+  }
+
+  // --- FUNGSI REALTIME LISTENER ---
+  void _listenToUserData() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots()
+          .listen(
+            (DocumentSnapshot doc) {
+              if (doc.exists && mounted) {
+                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                setState(() {
+                  _displayName = data['nama'] ?? 'User';
+                  String roleRaw = data['role'] ?? 'mahasiswa';
+                  _displayRole =
+                      roleRaw[0].toUpperCase() + roleRaw.substring(1);
+
+                  // Ambil URL foto terbaru
+                  _photoUrl = data['photo_url'];
+                });
+              }
+            },
+            onError: (e) {
+              debugPrint("Error listening to user data: $e");
+            },
+          );
+    }
+  }
+
+  // HELPER UNTUK GAMBAR
+  ImageProvider _getProfileImage() {
+    if (_photoUrl != null && _photoUrl!.isNotEmpty) {
+      return NetworkImage(_photoUrl!);
+    }
+    return const AssetImage('lib/assets/pictures/profile.jpg');
   }
 
   @override
@@ -125,23 +143,11 @@ class _UserHomePageState extends State<UserHomePage> {
     }
   }
 
-  // Format waktu menjadi HH:MM:SS
   String get _formattedTime {
     final h = _now.hour.toString().padLeft(2, '0');
     final m = _now.minute.toString().padLeft(2, '0');
     final s = _now.second.toString().padLeft(2, '0');
     return '$h:$m:$s';
-  }
-
-  // Dapatkan nama user dari route guard
-  String get _userName {
-    final username = RouteGuard.username;
-    if (RouteGuard.isAdmin) {
-      return 'Admin';
-    } else if (username != null) {
-      return 'Mahasiswa $username';
-    }
-    return 'User';
   }
 
   @override
@@ -155,42 +161,28 @@ class _UserHomePageState extends State<UserHomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header sederhana: foto profil dan salam
                   _buildSimpleHeader(context),
-
-                  // Profil User dengan Departemen, Waktu, dan Sesi Belajar
                   _buildUserProfileSection(),
-
-                  // Carousel foto kampus
                   _buildCarouselSection(),
-
-                  // Quick stats cards
                   _buildStatsSection(),
-
-                  // Calendar section
                   const SizedBox(height: 20),
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     child: _buildCalendar(),
                   ),
-
-                  // Fasilitas populer
                   _buildPopularFacilities(),
-
                   const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
 
-          // Blur overlay untuk menu profil
           if (_showProfileMenu)
             GestureDetector(
               onTap: () => setState(() => _showProfileMenu = false),
               child: Container(color: Colors.black.withOpacity(0.3)),
             ),
 
-          // Dropdown menu profil - HANYA Pengaturan Akun dan Keluar
           if (_showProfileMenu)
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
@@ -219,7 +211,7 @@ class _UserHomePageState extends State<UserHomePage> {
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            // Foto profil di dropdown dengan border merah
+                            // FOTO DI DROPDOWN
                             Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
@@ -228,17 +220,11 @@ class _UserHomePageState extends State<UserHomePage> {
                                   width: 2,
                                 ),
                               ),
-                              child: const CircleAvatar(
+                              child: CircleAvatar(
                                 radius: 25,
                                 backgroundColor: Colors.white,
-                                backgroundImage: AssetImage(
-                                  'lib/assets/pictures/profile.jpg',
-                                ),
-                                child: Icon(
-                                  Icons.person,
-                                  color: primaryColor,
-                                  size: 32,
-                                ),
+                                backgroundImage:
+                                    _getProfileImage(), // <--- PAKAI HELPER
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -247,17 +233,18 @@ class _UserHomePageState extends State<UserHomePage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _userName,
-                                    style: TextStyle(
+                                    _displayName,
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
                                       fontFamily: 'Poppins',
                                       fontWeight: FontWeight.bold,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    RouteGuard.username ?? 'User',
+                                    _displayRole,
                                     style: TextStyle(
                                       color: Colors.white.withOpacity(0.8),
                                       fontSize: 12,
@@ -271,7 +258,6 @@ class _UserHomePageState extends State<UserHomePage> {
                         ),
                       ),
                       const Divider(color: Colors.white24, height: 1),
-                      // HANYA Pengaturan Akun
                       _buildProfileMenuItem(
                         Icons.settings_outlined,
                         'Pengaturan Akun',
@@ -284,7 +270,6 @@ class _UserHomePageState extends State<UserHomePage> {
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Divider(color: Colors.white24, height: 1),
                       ),
-                      // HANYA Keluar
                       _buildProfileMenuItem(
                         Icons.logout_outlined,
                         'Keluar',
@@ -307,7 +292,7 @@ class _UserHomePageState extends State<UserHomePage> {
           setState(() => _selectedIndex = index);
           switch (index) {
             case 0:
-              Navigator.pushNamed(context, '/home_user');
+              // Sudah di home
               break;
             case 1:
               Navigator.pushNamed(context, '/facilities');
@@ -316,7 +301,7 @@ class _UserHomePageState extends State<UserHomePage> {
               Navigator.pushNamed(context, '/notification');
               break;
             case 3:
-              Navigator.pushNamed(context, '/notification');
+              Navigator.pushNamed(context, '/booking_history');
               break;
             case 4:
               Navigator.pushNamed(context, '/profile');
@@ -333,7 +318,6 @@ class _UserHomePageState extends State<UserHomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Foto profil di kiri
           GestureDetector(
             onTap: () => setState(() => _showProfileMenu = !_showProfileMenu),
             child: Container(
@@ -348,16 +332,15 @@ class _UserHomePageState extends State<UserHomePage> {
                   ),
                 ],
               ),
-              child: const CircleAvatar(
+              // FOTO DI HEADER (KIRI ATAS)
+              child: CircleAvatar(
                 radius: 28,
                 backgroundColor: Colors.white,
-                backgroundImage: AssetImage('lib/assets/pictures/profile.jpg'),
-                child: Icon(Icons.person, color: primaryColor, size: 30),
+                backgroundImage: _getProfileImage(), // <--- PAKAI HELPER
               ),
             ),
           ),
 
-          // Tulisan salam di tengah
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(left: 16.0),
@@ -375,20 +358,20 @@ class _UserHomePageState extends State<UserHomePage> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _userName,
+                    _displayName,
                     style: TextStyle(
                       color: Colors.grey[800],
                       fontSize: 18,
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.bold,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
           ),
 
-          // Ikon chat di kanan
           IconButton(
             onPressed: () => Navigator.pushNamed(context, '/chat'),
             icon: Icon(
@@ -420,7 +403,6 @@ class _UserHomePageState extends State<UserHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Judul Profil
           Text(
             'Statistik Anda',
             style: TextStyle(
@@ -431,8 +413,6 @@ class _UserHomePageState extends State<UserHomePage> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Container untuk Departemen, Waktu, dan Sesi Belajar
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
@@ -450,19 +430,10 @@ class _UserHomePageState extends State<UserHomePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // Departemen
                 _buildProfileItem('15', 'Departemen', Icons.school),
-
-                // Pembatas vertikal
                 Container(width: 1, height: 48, color: Colors.white24),
-
-                // Waktu (real-time)
                 _buildProfileItem(_formattedTime, 'Waktu', Icons.access_time),
-
-                // Pembatas vertikal
                 Container(width: 1, height: 48, color: Colors.white24),
-
-                // Sesi Belajar
                 _buildProfileItem('30', 'Sesi Belajar', Icons.book),
               ],
             ),
@@ -476,7 +447,6 @@ class _UserHomePageState extends State<UserHomePage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Icon
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -486,8 +456,6 @@ class _UserHomePageState extends State<UserHomePage> {
           child: Icon(icon, color: Colors.white, size: 20),
         ),
         const SizedBox(height: 8),
-
-        // Nilai
         Text(
           value,
           style: const TextStyle(
@@ -498,8 +466,6 @@ class _UserHomePageState extends State<UserHomePage> {
           ),
         ),
         const SizedBox(height: 6),
-
-        // Label
         Text(
           label,
           style: const TextStyle(
@@ -518,7 +484,6 @@ class _UserHomePageState extends State<UserHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Judul Galeri Kampus tanpa tombol navigasi
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -534,19 +499,14 @@ class _UserHomePageState extends State<UserHomePage> {
             ],
           ),
           const SizedBox(height: 12),
-
-          // Carousel
           SizedBox(
             height: 200,
             child: Stack(
               children: [
                 PageView.builder(
                   controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentCarouselIndex = index;
-                    });
-                  },
+                  onPageChanged: (index) =>
+                      setState(() => _currentCarouselIndex = index),
                   itemCount: _campusImages.length,
                   itemBuilder: (context, index) {
                     return Container(
@@ -554,106 +514,18 @@ class _UserHomePageState extends State<UserHomePage> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         color: Colors.grey[200],
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.asset(
-                              _campusImages[index],
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey[200],
-                                  child: Icon(
-                                    Icons.photo,
-                                    size: 60,
-                                    color: Colors.grey[400],
-                                  ),
-                                );
-                              },
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [
-                                    Colors.black.withOpacity(0.5),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 16,
-                              left: 16,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Fakultas Teknik',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Universitas Hasanuddin',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontSize: 12,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                        child: Image.asset(
+                          _campusImages[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(color: Colors.grey[200]),
                         ),
                       ),
                     );
                   },
-                ),
-
-                // Titik indikator di BOTTOM (tengah bawah gambar)
-                Positioned(
-                  bottom: 12,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        _campusImages.length,
-                        (index) => Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _currentCarouselIndex == index
-                                ? Colors
-                                      .white // Warna saat aktif
-                                : Colors.white.withOpacity(
-                                    0.5,
-                                  ), // Warna saat tidak aktif
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -872,9 +744,14 @@ class _UserHomePageState extends State<UserHomePage> {
   Widget _buildCalendar() {
     final year = _displayMonth.year;
     final month = _displayMonth.month;
+
     final firstDay = DateTime(year, month, 1);
-    final firstWeekday = firstDay.weekday;
-    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final int firstDayIndex = firstDay.weekday - 1;
+    final int daysInMonth = DateTime(year, month + 1, 0).day;
+
+    final int totalNeeded = firstDayIndex + daysInMonth;
+    final int rowCount = (totalNeeded / 7).ceil();
+    final int itemCount = rowCount * 7;
 
     return Container(
       padding: const EdgeInsets.all(8),
@@ -913,47 +790,54 @@ class _UserHomePageState extends State<UserHomePage> {
               mainAxisSpacing: 4,
               crossAxisSpacing: 4,
             ),
-            itemCount: 42,
+            itemCount: itemCount,
             itemBuilder: (context, index) {
-              final dayOffset = index - (firstWeekday - 2);
+              final dayOffset = index - firstDayIndex;
+              final DateTime cellDate = DateTime(year, month, 1 + dayOffset);
+
               final bool isCurrentMonth =
-                  dayOffset >= 0 && dayOffset < daysInMonth;
-              final dayNumber = isCurrentMonth ? dayOffset + 1 : 0;
+                  cellDate.year == year && cellDate.month == month;
 
-              DateTime? cellDate;
-              if (isCurrentMonth) {
-                cellDate = DateTime(year, month, dayNumber);
-              }
-
-              final isToday =
-                  cellDate != null &&
+              final bool isToday =
                   cellDate.year == _now.year &&
                   cellDate.month == _now.month &&
                   cellDate.day == _now.day;
 
-              DateTime? eventKey;
-              if (cellDate != null) {
-                eventKey = DateTime(
-                  cellDate.year,
-                  cellDate.month,
-                  cellDate.day,
-                );
+              final DateTime eventKey = DateTime(
+                cellDate.year,
+                cellDate.month,
+                cellDate.day,
+              );
+              final bool hasEvent = _eventsMap.containsKey(eventKey);
+
+              final String dayText = cellDate.day.toString();
+
+              Color textColor;
+              if (isToday) {
+                textColor = Colors.white;
+              } else if (isCurrentMonth) {
+                textColor = Colors.black;
+              } else {
+                textColor = Colors.grey.withOpacity(0.45);
               }
-              final hasEvent =
-                  eventKey != null && _eventsMap.containsKey(eventKey);
 
               return GestureDetector(
                 onTap: isCurrentMonth
                     ? () {
-                        if (cellDate != null && hasEvent) {
-                          final keyDate = DateTime(
-                            cellDate.year,
-                            cellDate.month,
-                            cellDate.day,
-                          );
+                        if (hasEvent) {
                           setState(() {
-                            _selectedEventDate = keyDate;
-                            _selectedEvent = _eventsMap[keyDate];
+                            _selectedEventDate = eventKey;
+                            _selectedEvent = _eventsMap[eventKey];
+                          });
+                          _showPopupOverlay(
+                            context,
+                            eventKey,
+                            _eventsMap[eventKey]!,
+                          );
+                        } else {
+                          setState(() {
+                            _selectedEventDate = null;
+                            _selectedEvent = null;
                           });
                         }
                       }
@@ -976,15 +860,24 @@ class _UserHomePageState extends State<UserHomePage> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
+                      if (isToday)
+                        Container(
+                          width: 28,
+                          height: 28,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: primaryColor,
+                          ),
+                        ),
                       Center(
                         child: Text(
-                          isCurrentMonth ? dayNumber.toString() : '',
+                          isCurrentMonth ? dayText : '',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: isToday
                                 ? FontWeight.bold
                                 : FontWeight.normal,
-                            color: isToday ? primaryColor : Colors.black,
+                            color: isToday ? Colors.white : textColor,
                             fontFamily: 'Poppins',
                           ),
                         ),
@@ -1012,6 +905,71 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
+  void _showPopupOverlay(
+    BuildContext context,
+    DateTime date,
+    Map<String, dynamic> event,
+  ) {
+    _removePopup();
+
+    final overlayState = Overlay.of(context);
+    final renderBox = context.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+
+    _popupOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: position.dy - 100,
+        left: position.dx + 50,
+        child: Material(
+          elevation: 4,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  DateFormat('dd MMMM yyyy').format(date),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  event['title']?.toString() ?? 'Kegiatan',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlayState.insert(_popupOverlay!);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      _removePopup();
+    });
+  }
+
   Widget _buildProfileMenuItem(
     IconData icon,
     String label,
@@ -1024,16 +982,12 @@ class _UserHomePageState extends State<UserHomePage> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
-            children: [
+            children: <Widget>[
               Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 12),
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontFamily: 'Poppins',
-                ),
+                style: AppTextStyles.body2.copyWith(color: Colors.white),
               ),
             ],
           ),
@@ -1048,16 +1002,19 @@ class _UserHomePageState extends State<UserHomePage> {
       builder: (BuildContext context) => AlertDialog(
         title: const Text('Logout'),
         content: const Text('Anda yakin ingin logout?'),
-        actions: [
+        actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () {
-              AuthService.logout();
-              Navigator.pop(context);
-              Navigator.of(context).pushReplacementNamed('/login');
+            onPressed: () async {
+              await AuthService().logout();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                Navigator.of(context).pushReplacementNamed('/login');
+              }
             },
             child: const Text('Logout'),
           ),

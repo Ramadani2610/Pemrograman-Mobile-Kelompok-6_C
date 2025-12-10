@@ -1,8 +1,9 @@
-// main.dart
-
 import 'package:flutter/material.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:spareapp_unhas/firebase_options.dart';
+// --- PERBAIKAN 1: Import Firebase dinyalakan ---
+import 'package:firebase_core/firebase_core.dart';
+import 'package:spareapp_unhas/firebase_options.dart';
+// ----------------------------------------------
+
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:spareapp_unhas/data/services/route_guard.dart';
@@ -31,6 +32,19 @@ const Color primaryColor = Color(0xFFD32F2F);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // --- PERBAIKAN 2: Inisialisasi Firebase Dinyalakan ---
+  // Kita menggunakan DefaultFirebaseOptions.currentPlatform
+  // agar otomatis mendeteksi apakah sedang dijalankan di Web atau Android
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+  }
+  // -----------------------------------------------------
+
   // Inisialisasi locale Indonesia untuk intl
   await initializeDateFormatting('id_ID', null);
   Intl.defaultLocale = 'id_ID'; // optional tapi bagus supaya konsisten
@@ -39,16 +53,6 @@ Future<void> main() async {
   await RouteGuard.loadUserInfo();
 
   runApp(const MyApp());
-  // Firebase initialization disabled for now due to web compatibility issues
-  // Uncomment and properly configure after running: flutter pub global activate flutterfire_cli
-  // Then: flutterfire configure --project=spareapp-unhas-dev
-  /*
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.web);
-  } catch (e) {
-    debugPrint('Firebase initialization error: $e');
-  }
-  */
 }
 
 class MyApp extends StatelessWidget {
@@ -71,7 +75,6 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(), // ADMIN HOME PAGE
         '/home_user': (context) => const UserHomePage(), // USER HOME PAGE
         // FACILITIES
-      
         '/admin_facilities': (context) =>
             const AdminFacilitiesPage(), // ADMIN FACILITIES PAGE
         '/facility_detail_tabs': (context) =>

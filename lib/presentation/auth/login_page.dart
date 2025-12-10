@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:spareapp_unhas/data/services/auth_service.dart';
 import 'package:spareapp_unhas/data/services/route_guard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// --- TAMBAHAN IMPORT BARU ---
+import 'package:spareapp_unhas/data/services/auth_service.dart';
+import 'package:spareapp_unhas/data/models/user_model.dart';
+// ----------------------------
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
@@ -79,49 +83,69 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // ===== BAGIAN YANG DIPERBARUI (LOGIC LOGIN) =====
   void _handleLogin() async {
+    // 1. Validasi Input Kosong
+    if (_usernameController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Username/NIM dan Kata Sandi tidak boleh kosong',
+            style: AppTextStyles.body2.copyWith(color: Colors.white),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
-    // Simulasi delay
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // 2. Panggil Service Login Firebase yang Baru
+      final AuthService authService = AuthService();
 
-    final result = AuthService.validateLogin(
-      username: _usernameController.text,
-      password: _passwordController.text,
-    );
+      // Kita anggap input username adalah NIM
+      UserModel user = await authService.loginWithNim(
+        nim: _usernameController.text,
+        password: _passwordController.text,
+      );
 
-    setState(() {
-      _isLoading = false;
-    });
+      // 3. Jika Berhasil: Simpan Session & Credentials
+      await _saveOrClearCredentials();
 
-    if (result['success']) {
-      // Persist credentials if requested
-      _saveOrClearCredentials();
+      // Simpan info ke RouteGuard (agar aplikasi tahu siapa yang login)
+      await RouteGuard.setUserInfo(username: user.nama, userType: user.role);
 
-      // Set user info in RouteGuard for session management
-      final username = _usernameController.text;
-      final userType = result['userType'] as String?;
-      if (userType != null) {
-        await RouteGuard.setUserInfo(username: username, userType: userType);
-      }
-
-      // Navigate based on userType
       if (mounted) {
-        if (userType == 'admin') {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // 4. Arahkan Halaman Sesuai Role (Admin / Mahasiswa)
+        if (user.role == 'admin') {
           Navigator.of(context).pushReplacementNamed('/home');
         } else {
           Navigator.of(context).pushReplacementNamed('/home_user');
         }
       }
-    } else {
-      // Show error snackbar
+    } catch (e) {
+      // 5. Jika Gagal: Tampilkan Error
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Bersihkan pesan error agar enak dibaca user
+        String message = e.toString().replaceAll("Exception: ", "");
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              result['message'],
+              message,
               style: AppTextStyles.body2.copyWith(color: Colors.white),
             ),
             backgroundColor: AppColors.error,
@@ -131,6 +155,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
+  // ===============================================
 
   Future<void> _saveOrClearCredentials() async {
     try {
@@ -358,4 +383,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-}  
+}

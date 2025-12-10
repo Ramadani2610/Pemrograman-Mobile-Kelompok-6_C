@@ -3,6 +3,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
+
+// --- IMPORT WAJIB UNTUK DATA USER ---
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahkan ini
+import 'package:spareapp_unhas/data/services/route_guard.dart';
+import 'package:spareapp_unhas/data/services/auth_service.dart';
+// ------------------------------------
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
@@ -18,10 +26,16 @@ class _HomePageState extends State<HomePage> {
   bool _showProfileMenu = false;
   int _selectedIndex = 0;
 
+  // Variabel Data User Dinamis
+  String _currentName = 'Admin';
+  String _currentEmail = '';
+  String? _photoUrl; // Variable untuk menyimpan link foto
+
   // Running clock state
   DateTime _now = DateTime.now();
   Timer? _timer;
-  // Calendar events (loaded from assets) -> map date -> event data
+
+  // Calendar events
   final Map<DateTime, Map<String, dynamic>> _eventsMap = {};
   Map<String, dynamic>? _selectedEvent;
   DateTime? _selectedEventDate;
@@ -31,19 +45,20 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    // 1. PANGGIL LISTENER REALTIME
+    _listenToUserData();
+
     _now = DateTime.now();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
     });
-    // set displayed month to December 2025
+
     _displayMonth = DateTime(2025, 12, 1);
-    // load calendar events from asset
     _loadCalendarEvents();
 
-    // Add example events for December 2025
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
-        // Contoh kegiatan kampus Desember 2025
         _eventsMap[DateTime(2025, 12, 1)] = {
           'title': 'Awal Bulan Akademik',
           'date': '2025-12-01',
@@ -52,33 +67,50 @@ class _HomePageState extends State<HomePage> {
           'title': 'Ujian Akhir Semester',
           'date': '2025-12-05',
         };
-        _eventsMap[DateTime(2025, 12, 10)] = {
-          'title': 'Seminar Hasil Penelitian',
-          'date': '2025-12-10',
-        };
-        _eventsMap[DateTime(2025, 12, 15)] = {
-          'title': 'Yudisium',
-          'date': '2025-12-15',
-        };
-        _eventsMap[DateTime(2025, 12, 18)] = {
-          'title': 'Wisuda Periode Desember',
-          'date': '2025-12-18',
-        };
-        _eventsMap[DateTime(2025, 12, 20)] = {
-          'title': 'Libur Semester',
-          'date': '2025-12-20',
-        };
-        _eventsMap[DateTime(2025, 12, 25)] = {
-          'title': 'Libur Natal',
-          'date': '2025-12-25',
-        };
-        _eventsMap[DateTime(2025, 12, 31)] = {
-          'title': 'Tutup Tahun Akademik',
-          'date': '2025-12-31',
-        };
       });
     });
   }
+
+  // --- FUNGSI REALTIME LISTENER (UPDATE OTOMATIS) ---
+  void _listenToUserData() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Ambil Email langsung dari Auth (backup)
+      _currentEmail = user.email ?? 'Tidak ada email';
+
+      // Dengarkan perubahan di Firestore
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots()
+          .listen(
+            (DocumentSnapshot doc) {
+              if (doc.exists && mounted) {
+                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                setState(() {
+                  _currentName = data['nama'] ?? 'Admin';
+                  // Update foto jika ada perubahan di database
+                  _photoUrl = data['photo_url'];
+                });
+              }
+            },
+            onError: (e) {
+              debugPrint("Error listening to user data: $e");
+            },
+          );
+    }
+  }
+
+  // HELPER UNTUK GAMBAR PROFIL
+  ImageProvider _getProfileImage() {
+    if (_photoUrl != null && _photoUrl!.isNotEmpty) {
+      return NetworkImage(_photoUrl!); // Pakai foto Cloudinary
+    }
+    return const AssetImage(
+      'lib/assets/icons/foto-profil.jpg',
+    ); // Default asset
+  }
+  // -----------------------------------
 
   @override
   void dispose() {
@@ -160,11 +192,12 @@ class _HomePageState extends State<HomePage> {
                                 width: 2,
                               ),
                             ),
-                            child: const CircleAvatar(
+                            // FOTO PROFIL DI HEADER (KIRI ATAS)
+                            child: CircleAvatar(
                               radius: 20,
-                              backgroundImage: AssetImage(
-                                'lib/assets/icons/foto-profil.jpg',
-                              ),
+                              backgroundColor: Colors.white,
+                              backgroundImage:
+                                  _getProfileImage(), // <--- PAKAI HELPER
                             ),
                           ),
                         ),
@@ -179,7 +212,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Greeting
+                    // Greeting (UPDATED)
                     RichText(
                       text: TextSpan(
                         children: <TextSpan>[
@@ -188,7 +221,8 @@ class _HomePageState extends State<HomePage> {
                             style: AppTextStyles.heading1,
                           ),
                           TextSpan(
-                            text: 'Admin!',
+                            // TAMPILKAN NAMA ASLI DI SINI
+                            text: '$_currentName!',
                             style: AppTextStyles.heading1.copyWith(
                               color: AppColors.mainGradientStart,
                               fontWeight: FontWeight.w700,
@@ -469,11 +503,12 @@ class _HomePageState extends State<HomePage> {
                                   width: 2,
                                 ),
                               ),
-                              child: const CircleAvatar(
+                              // FOTO DI DALAM MENU DROPDOWN
+                              child: CircleAvatar(
                                 radius: 30,
-                                backgroundImage: AssetImage(
-                                  'lib/assets/icons/foto-profil.jpg',
-                                ),
+                                backgroundColor: Colors.white,
+                                backgroundImage:
+                                    _getProfileImage(), // <--- PAKAI HELPER
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -481,16 +516,18 @@ class _HomePageState extends State<HomePage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
+                                  // --- UPDATED NAME ---
                                   Text(
-                                    'Admin',
+                                    _currentName,
                                     style: AppTextStyles.body1.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
+                                  // --- UPDATED EMAIL ---
                                   Text(
-                                    'admin@gmail.com',
+                                    _currentEmail,
                                     style: AppTextStyles.caption.copyWith(
                                       color: Colors.white.withOpacity(0.8),
                                     ),
@@ -648,15 +685,12 @@ class _HomePageState extends State<HomePage> {
     final month = _displayMonth.month;
 
     final firstDay = DateTime(year, month, 1);
-    final int firstDayIndex =
-        firstDay.weekday - 1; // Monday=1 → index 0, cocok dg header S S R K J S M
+    final int firstDayIndex = firstDay.weekday - 1;
     final int daysInMonth = DateTime(year, month + 1, 0).day;
 
-    // Banyak cell yang benar-benar dibutuhkan (leading + days in month)
     final int totalNeeded = firstDayIndex + daysInMonth;
-    // Banyak baris yang dibutuhkan (tanpa baris kosong di bawah)
     final int rowCount = (totalNeeded / 7).ceil();
-    final int itemCount = rowCount * 7; // isi full per baris
+    final int itemCount = rowCount * 7;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -664,12 +698,11 @@ class _HomePageState extends State<HomePage> {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
         childAspectRatio: 1,
-        mainAxisSpacing: 6,   // jarak vertikal = jarak horizontal
+        mainAxisSpacing: 6,
         crossAxisSpacing: 8,
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        // Bisa ke bulan sebelum / sesudah
         final int dayOffset = index - firstDayIndex;
         final DateTime cellDate = DateTime(year, month, 1 + dayOffset);
 
@@ -681,8 +714,11 @@ class _HomePageState extends State<HomePage> {
             cellDate.month == _now.month &&
             cellDate.day == _now.day;
 
-        final DateTime eventKey =
-            DateTime(cellDate.year, cellDate.month, cellDate.day);
+        final DateTime eventKey = DateTime(
+          cellDate.year,
+          cellDate.month,
+          cellDate.day,
+        );
         final bool hasEvent = _eventsMap.containsKey(eventKey);
 
         final String dayText = cellDate.day.toString();
@@ -693,7 +729,7 @@ class _HomePageState extends State<HomePage> {
         } else if (isCurrentMonth) {
           textColor = AppColors.titleText;
         } else {
-          textColor = Colors.grey.withOpacity(0.45); // abu-abu transparan
+          textColor = Colors.grey.withOpacity(0.45);
         }
 
         return GestureDetector(
@@ -716,7 +752,6 @@ class _HomePageState extends State<HomePage> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Hari ini
                 if (isToday)
                   Container(
                     width: 44,
@@ -726,8 +761,7 @@ class _HomePageState extends State<HomePage> {
                       gradient: AppColors.mainGradient,
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              AppColors.mainGradientStart.withOpacity(0.25),
+                          color: AppColors.mainGradientStart.withOpacity(0.25),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -743,7 +777,6 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   )
-                // Tanggal bulan yang sedang ditampilkan
                 else if (isCurrentMonth)
                   Container(
                     width: 44,
@@ -769,28 +802,22 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   )
-                // Tanggal bulan lain (leading/trailing days)
                 else
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.grey.withOpacity(0.22),
-                      ),
+                      border: Border.all(color: Colors.grey.withOpacity(0.22)),
                     ),
                     child: Center(
                       child: Text(
                         dayText,
-                        style: AppTextStyles.caption.copyWith(
-                          color: textColor,
-                        ),
+                        style: AppTextStyles.caption.copyWith(color: textColor),
                       ),
                     ),
                   ),
 
-                // Titik event
                 if (hasEvent)
                   Positioned(
                     bottom: 4,
@@ -811,8 +838,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
-
   void _showPopupOverlay(
     BuildContext context,
     DateTime date,
@@ -826,7 +851,7 @@ class _HomePageState extends State<HomePage> {
 
     _popupOverlay = OverlayEntry(
       builder: (context) => Positioned(
-        top: position.dy - 100, // Atur posisi popup
+        top: position.dy - 100,
         left: position.dx + 50,
         child: Material(
           elevation: 4,
@@ -873,7 +898,6 @@ class _HomePageState extends State<HomePage> {
 
     overlayState.insert(_popupOverlay!);
 
-    // Hilangkan popup setelah 3 detik
     Future.delayed(const Duration(seconds: 3), () {
       _removePopup();
     });
@@ -917,9 +941,13 @@ class _HomePageState extends State<HomePage> {
             child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushReplacementNamed('/login');
+            onPressed: () async {
+              await AuthService().logout();
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                Navigator.of(context).pushReplacementNamed('/login');
+              }
             },
             child: const Text('Logout'),
           ),

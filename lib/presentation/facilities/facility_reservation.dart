@@ -284,7 +284,7 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Reservasi Fasilitas Manual',
+                      'Reservasi Fasilitas',
                       style: AppTextStyles.body2.copyWith(
                         color: AppColors.secondaryText,
                       ),

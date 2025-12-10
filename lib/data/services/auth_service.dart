@@ -1,90 +1,80 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user_model.dart';
 import 'route_guard.dart';
 
-/// Service untuk validasi login SSO UNHAS
-/// Username bisa berupa NIM (format: angka) atau "admin1"
-/// Password untuk admin1 adalah "admin123"
-/// Untuk NIM, password bisa berupa apapun (simulasi SSO UNHAS)
 class AuthService {
-  // Admin credentials
-  static const String adminUsername = 'admin1';
-  static const String adminPassword = 'admin123';
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Format NIM UNHAS: biasanya 8 digit (contoh: 12345678)
-  static const int nimLength = 8;
-
-  /// Validasi login
-  /// Returns:
-  /// - success: true jika login berhasil
-  /// - message: pesan error atau sukses
-  /// - userType: 'admin' atau 'mahasiswa'
-  static Map<String, dynamic> validateLogin({
-    required String username,
+  /// Login menggunakan NIM dan Password
+  /// Mengubah NIM menjadi email format: [NIM]@student.unhas.ac.id
+  Future<UserModel> loginWithNim({
+    required String nim,
     required String password,
-  }) {
-    // Trim whitespace
-    username = username.trim();
-    password = password.trim();
-
-    // Validasi input kosong
-    if (username.isEmpty || password.isEmpty) {
-      return {
-        'success': false,
-        'message': 'Username dan password tidak boleh kosong',
-        'userType': null,
-      };
-    }
-
-    // Cek admin login
-    if (username == adminUsername && password == adminPassword) {
-      return {
-        'success': true,
-        'message': 'Login berhasil sebagai admin',
-        'userType': 'admin',
-        'username': username,
-      };
-    }
-
-    // Cek NIM login (validasi format NIM)
-    if (isValidNIM(username)) {
-      // Simulasi SSO: password apapun diterima untuk NIM yang valid
-      // Dalam implementasi nyata, ini akan hit API SSO UNHAS
-      return {
-        'success': true,
-        'message': 'Login berhasil',
-        'userType': 'mahasiswa',
-        'username': username,
-      };
-    }
-
-    // Username/NIM tidak terdaftar
-    return {
-      'success': false,
-      'message': 'Username atau password yang digunakan tidak terdaftar',
-      'userType': null,
-    };
-  }
-
-  /// Validasi format NIM UNHAS
-  /// NIM UNHAS terdiri dari 8 digit angka
-  static bool isValidNIM(String nim) {
-    // Cek apakah hanya berisi digit dan panjangnya 8
-    return nim.length == nimLength && int.tryParse(nim) != null;
-  }
-
-  /// Logout: bersihkan session dan credential yang tersimpan
-  static Future<void> logout() async {
+  }) async {
     try {
-      // Hapus user session dari RouteGuard
+      // 1. Bersihkan input
+      String cleanNim = nim.trim();
+      String cleanPass = password.trim();
+
+      // 2. Trik: Ubah NIM jadi format Email
+      // Contoh: H071191001 -> H071191001@student.unhas.ac.id
+      String emailFormat = "$cleanNim@student.unhas.ac.id";
+
+      // 3. Login ke Firebase Auth
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: emailFormat,
+        password: cleanPass,
+      );
+
+      // 4. Ambil Data Detail User dari Firestore
+      // Kita butuh tahu dia 'admin' atau 'mahasiswa'
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(result.user!.uid)
+          .get();
+
+      if (!doc.exists) {
+        throw Exception("Login berhasil, tapi data user tidak ditemukan di Database.");
+      }
+
+      // 5. Kembalikan data user ke UI
+      return UserModel.fromMap(doc.data() as Map<String, dynamic>, result.user!.uid);
+
+    } on FirebaseAuthException catch (e) {
+      // Handle error khas Firebase
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        throw Exception("NIM atau Password salah.");
+      } else if (e.code == 'network-request-failed') {
+        throw Exception("Periksa koneksi internet Anda.");
+      } else if (e.code == 'invalid-email') {
+        throw Exception("Format NIM tidak valid.");
+      }
+      throw Exception("Terjadi kesalahan: ${e.message}");
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  /// Logout: Hapus session Firebase & Lokal
+  Future<void> logout() async {
+    try {
+      // 1. Logout dari Firebase
+      await _auth.signOut();
+
+      // 2. Hapus data session di RouteGuard
       await RouteGuard.clearUserInfo();
 
-      // Hapus saved credentials dari SharedPreferences
+      // 3. Hapus data 'Remember Me' di HP
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('remember_me');
       await prefs.remove('saved_username');
       await prefs.remove('saved_password');
+      
     } catch (e) {
-      // ignore errors during logout cleanup
+      // ignore error
     }
   }
 }

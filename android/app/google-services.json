@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "694348068686",
+    "project_id": "spare-app-unhas",
+    "storage_bucket": "spare-app-unhas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694348068686:android:bde844c53623e0353c901f",
+        "android_client_info": {
+          "package_name": "com.example.spareapp_unhas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlla6KG_uCxXfvzwHk4d-rKHGtSvYI3Aw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

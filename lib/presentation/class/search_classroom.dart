@@ -130,15 +130,6 @@ class _SearchClassroomPageState extends State<SearchClassroomPage> {
                     style: AppTextStyles.heading2,
                   ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      // TODO: arahkan ke halaman chat bila sudah ada
-                    },
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: AppColors.mainGradientStart,
-                    ),
-                  ),
                 ],
               ),
             ),
