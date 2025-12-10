@@ -486,7 +486,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
                 children: [
                   Text(
                     'Tinjau Peminjaman',
-                    style: AppTextStyles.heading2.copyWith(
+                    style: AppTextStyles.heading1.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
