@@ -26,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? _selectedEvent;
   DateTime? _selectedEventDate;
   DateTime _displayMonth = DateTime.now();
+  OverlayEntry? _popupOverlay;
 
   @override
   void initState() {
@@ -34,16 +35,63 @@ class _HomePageState extends State<HomePage> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
     });
-    // set displayed month to current month
-    _displayMonth = DateTime(_now.year, _now.month, 1);
+    // set displayed month to December 2025
+    _displayMonth = DateTime(2025, 12, 1);
     // load calendar events from asset
     _loadCalendarEvents();
+
+    // Add example events for December 2025
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        // Contoh kegiatan kampus Desember 2025
+        _eventsMap[DateTime(2025, 12, 1)] = {
+          'title': 'Awal Bulan Akademik',
+          'date': '2025-12-01',
+        };
+        _eventsMap[DateTime(2025, 12, 5)] = {
+          'title': 'Ujian Akhir Semester',
+          'date': '2025-12-05',
+        };
+        _eventsMap[DateTime(2025, 12, 10)] = {
+          'title': 'Seminar Hasil Penelitian',
+          'date': '2025-12-10',
+        };
+        _eventsMap[DateTime(2025, 12, 15)] = {
+          'title': 'Yudisium',
+          'date': '2025-12-15',
+        };
+        _eventsMap[DateTime(2025, 12, 18)] = {
+          'title': 'Wisuda Periode Desember',
+          'date': '2025-12-18',
+        };
+        _eventsMap[DateTime(2025, 12, 20)] = {
+          'title': 'Libur Semester',
+          'date': '2025-12-20',
+        };
+        _eventsMap[DateTime(2025, 12, 25)] = {
+          'title': 'Libur Natal',
+          'date': '2025-12-25',
+        };
+        _eventsMap[DateTime(2025, 12, 31)] = {
+          'title': 'Tutup Tahun Akademik',
+          'date': '2025-12-31',
+        };
+      });
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _removePopup();
     super.dispose();
+  }
+
+  void _removePopup() {
+    if (_popupOverlay != null) {
+      _popupOverlay!.remove();
+      _popupOverlay = null;
+    }
   }
 
   String get _formattedTime {
@@ -104,10 +152,19 @@ class _HomePageState extends State<HomePage> {
                           onTap: () => setState(
                             () => _showProfileMenu = !_showProfileMenu,
                           ),
-                          child: const CircleAvatar(
-                            radius: 22,
-                            backgroundImage: AssetImage(
-                              'lib/assets/icons/foto-profil.jpg',
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.mainGradientStart,
+                                width: 2,
+                              ),
+                            ),
+                            child: const CircleAvatar(
+                              radius: 20,
+                              backgroundImage: AssetImage(
+                                'lib/assets/icons/foto-profil.jpg',
+                              ),
                             ),
                           ),
                         ),
@@ -233,7 +290,13 @@ class _HomePageState extends State<HomePage> {
                             ),
                             Text(
                               DateFormat.yMMMM().format(_displayMonth),
-                              style: AppTextStyles.body2,
+                              style: AppTextStyles.body2.copyWith(
+                                color:
+                                    _displayMonth.year == 2025 &&
+                                        _displayMonth.month == 12
+                                    ? Colors.red
+                                    : null,
+                              ),
                             ),
                             IconButton(
                               visualDensity: VisualDensity.compact,
@@ -256,17 +319,17 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Weekday header (Senin - Minggu)
+                    // Weekday header with initials
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
-                        Expanded(child: Center(child: Text('Senin'))),
-                        Expanded(child: Center(child: Text('Selasa'))),
-                        Expanded(child: Center(child: Text('Rabu'))),
-                        Expanded(child: Center(child: Text('Kamis'))),
-                        Expanded(child: Center(child: Text('Jumat'))),
-                        Expanded(child: Center(child: Text('Sabtu'))),
-                        Expanded(child: Center(child: Text('Minggu'))),
+                        Expanded(child: Center(child: Text('S'))),
+                        Expanded(child: Center(child: Text('S'))),
+                        Expanded(child: Center(child: Text('R'))),
+                        Expanded(child: Center(child: Text('K'))),
+                        Expanded(child: Center(child: Text('J'))),
+                        Expanded(child: Center(child: Text('S'))),
+                        Expanded(child: Center(child: Text('M'))),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -325,41 +388,43 @@ class _HomePageState extends State<HomePage> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: AppColors.mainGradient,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: TextButton.icon(
-                            onPressed: () => Navigator.pushNamed(
-                              context,
-                              '/admin_facilities',
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              foregroundColor: Colors.white,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            icon: const Icon(Icons.edit, size: 16),
-                            label: Text(
-                              'Kelola',
-                              style: AppTextStyles.button2.copyWith(
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    _listItem('Paket Fasilitas', '15 Terpinjam'),
-                    _listItem('Remote Tv', '5 Terpinjam'),
-                    _listItem('Kabel Terminal', '4 Terpinjam'),
-                    _listItem('Spidol', '2 Terpinjam'),
-                    _listItem('Kabel HDMI', '0 Terpinjam'),
+                    // Horizontal scrollable facility cards
+                    SizedBox(
+                      height: 140,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: <Widget>[
+                          _facilityCard(
+                            'Paket Fasilitas',
+                            '15 Terpinjam',
+                            'lib/assets/icons/facility1.jpg',
+                          ),
+                          _facilityCard(
+                            'Remote Tv',
+                            '5 Terpinjam',
+                            'lib/assets/icons/facility2.jpg',
+                          ),
+                          _facilityCard(
+                            'Kabel Terminal',
+                            '4 Terpinjam',
+                            'lib/assets/icons/facility3.jpg',
+                          ),
+                          _facilityCard(
+                            'Spidol',
+                            '2 Terpinjam',
+                            'lib/assets/icons/facility4.jpg',
+                          ),
+                          _facilityCard(
+                            'Kabel HDMI',
+                            '0 Terpinjam',
+                            'lib/assets/icons/facility5.jpg',
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 80),
                   ],
                 ),
@@ -374,7 +439,7 @@ class _HomePageState extends State<HomePage> {
               child: Container(color: Colors.black.withOpacity(0.3)),
             ),
 
-          // Dropdown menu
+          // Dropdown menu (simplified)
           if (_showProfileMenu)
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
@@ -396,10 +461,19 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           children: <Widget>[
-                            const CircleAvatar(
-                              radius: 30,
-                              backgroundImage: AssetImage(
-                                'lib/assets/icons/foto-profil.jpg',
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                              child: const CircleAvatar(
+                                radius: 30,
+                                backgroundImage: AssetImage(
+                                  'lib/assets/icons/foto-profil.jpg',
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -436,64 +510,6 @@ class _HomePageState extends State<HomePage> {
                           Navigator.pushNamed(context, '/profile');
                         },
                       ),
-                      _buildProfileMenuItem(
-                        Icons.dark_mode_outlined,
-                        'Tema',
-                        () {
-                          setState(() => _showProfileMenu = false);
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(const SnackBar(content: Text('Tema')));
-                        },
-                      ),
-                      _buildProfileMenuItem(
-                        Icons.description_outlined,
-                        'Bahasa',
-                        () {
-                          setState(() => _showProfileMenu = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Bahasa')),
-                          );
-                        },
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Divider(color: Colors.white24, height: 1),
-                      ),
-                      _buildProfileMenuItem(
-                        Icons.headphones_outlined,
-                        'Bantuan dan Dukungan',
-                        () {
-                          setState(() => _showProfileMenu = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Bantuan dan Dukungan'),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildProfileMenuItem(
-                        Icons.info_outlined,
-                        'Syarat dan Ketentuan',
-                        () {
-                          setState(() => _showProfileMenu = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Syarat dan Ketentuan'),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildProfileMenuItem(
-                        Icons.help_outline,
-                        'Tentang Aplikasi',
-                        () {
-                          setState(() => _showProfileMenu = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Tentang Aplikasi')),
-                          );
-                        },
-                      ),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Divider(color: Colors.white24, height: 1),
@@ -523,7 +539,7 @@ class _HomePageState extends State<HomePage> {
               Navigator.pushNamed(context, '/home');
               break;
             case 1:
-              Navigator.pushNamed(context, '/manage');
+              Navigator.pushNamed(context, '/facilities');
               break;
             case 2:
               Navigator.pushNamed(context, '/notification');
@@ -561,162 +577,401 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _listItem(String title, String subtitle) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 48,
-        height: 48,
+  Widget _facilityCard(String title, String subtitle, String imagePath) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/admin_facilities'),
+      child: Container(
+        width: 160,
+        margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
           gradient: AppColors.mainGradient,
-          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.mainGradientStart.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+              child: Container(
+                height: 80,
+                width: double.infinity,
+                color: Colors.white.withOpacity(0.1),
+                child: Center(
+                  child: Icon(
+                    Icons.devices_other,
+                    size: 40,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.body2.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      title: Text(
-        title,
-        style: AppTextStyles.body1.copyWith(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: AppTextStyles.body2.copyWith(color: AppColors.mainGradientStart),
-      ),
-      trailing: Icon(Icons.more_horiz, color: AppColors.mainGradientStart),
-    );
-  }
-
-  Widget _legendBox({Gradient? gradient, Color? color, required String label}) {
-    final box = Container(
-      width: 22,
-      height: 22,
-      decoration: BoxDecoration(
-        gradient: gradient,
-        color: color,
-        borderRadius: BorderRadius.circular(6),
-      ),
-    );
-
-    return Row(
-      children: [
-        box,
-        const SizedBox(width: 6),
-        Text(label, style: AppTextStyles.caption),
-      ],
-    );
-  }
-
-  Widget _legendOutline({required String label}) {
-    final box = Container(
-      width: 22,
-      height: 22,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black26),
-        borderRadius: BorderRadius.circular(6),
-      ),
-    );
-
-    return Row(
-      children: [
-        box,
-        const SizedBox(width: 6),
-        Text(label, style: AppTextStyles.caption),
-      ],
     );
   }
 
   Widget _buildCalendar() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(top: 4, bottom: 16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7,
-        childAspectRatio: 1.0,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 12,
+    final year = _displayMonth.year;
+    final month = _displayMonth.month;
+    final firstDay = DateTime(year, month, 1);
+    final firstWeekday = firstDay.weekday; // 1 (Senin) sampai 7 (Minggu)
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+
+    // Cek apakah bulan yang ditampilkan adalah Desember 2025
+    final bool isDecember2025 = year == 2025 && month == 12;
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            spreadRadius: 2,
+          ),
+        ],
       ),
-      itemBuilder: (BuildContext context, int index) {
-        final year = _displayMonth.year;
-        final month = _displayMonth.month;
-        final firstWeekday = DateTime(year, month, 1).weekday % 7; // Sunday=0
-        final daysInMonth = DateTime(year, month + 1, 0).day;
-        final totalCells = ((firstWeekday + daysInMonth) / 7).ceil() * 7;
-        final cellCount = totalCells;
-        // ensure builder range covers cellCount
-        if (index >= cellCount) return const SizedBox.shrink();
-
-        final dayNumber = index - firstWeekday + 1;
-        final bool isActive = dayNumber >= 1 && dayNumber <= daysInMonth;
-
-        DateTime? tileDate;
-        if (isActive) tileDate = DateTime(year, month, dayNumber);
-
-        final bool isToday =
-            tileDate != null &&
-            tileDate.year == _now.year &&
-            tileDate.month == _now.month &&
-            tileDate.day == _now.day;
-
-        DateTime? keyDate;
-        if (tileDate != null) {
-          keyDate = DateTime(tileDate.year, tileDate.month, tileDate.day);
-        }
-
-        final bool isMarked =
-            keyDate != null && _eventsMap.containsKey(keyDate);
-
-        Color? bgColor;
-        Gradient? gradient;
-
-        if (!isActive) {
-          bgColor = Colors.grey[200];
-        } else if (isMarked) {
-          bgColor = Colors.orange.shade400;
-        } else {
-          gradient = AppColors.mainGradient;
-        }
-
-        return GestureDetector(
-          onTap: () {
-            if (isMarked && keyDate != null) {
-              setState(() {
-                _selectedEventDate = keyDate;
-                _selectedEvent = _eventsMap[keyDate];
-              });
-            } else {
-              setState(() {
-                _selectedEvent = null;
-                _selectedEventDate = null;
-              });
-            }
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(8),
-              border: isToday
-                  ? Border.all(color: Colors.white, width: 2)
-                  : null,
-            ),
-            child: Center(
+      child: Column(
+        children: [
+          // Header bulan dengan bulatan besar di tengah
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.red.withOpacity(0.1),
+              ),
+              padding: const EdgeInsets.all(12),
               child: Text(
-                isActive ? dayNumber.toString().padLeft(2, '0') : '',
-                style: AppTextStyles.body2.copyWith(
-                  color: isActive ? Colors.white : Colors.black54,
+                _displayMonth.month.toString().padLeft(2, '0'),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                  fontFamily: 'Poppins',
                 ),
               ),
             ),
           ),
-        );
-      },
-      itemCount: (() {
-        final year = _displayMonth.year;
-        final month = _displayMonth.month;
-        final firstWeekday = DateTime(year, month, 1).weekday % 7;
-        final daysInMonth = DateTime(year, month + 1, 0).day;
-        return ((firstWeekday + daysInMonth) / 7).ceil() * 7;
-      })(),
+          const SizedBox(height: 8),
+
+          // Grid kalender dengan ukuran lebih kecil
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              childAspectRatio: 1.0,
+              mainAxisSpacing: 4,
+              crossAxisSpacing: 4,
+            ),
+            itemCount: 42, // 6 minggu * 7 hari
+            itemBuilder: (context, index) {
+              // Hitung tanggal untuk sel ini
+              final dayOffset =
+                  index -
+                  (firstWeekday -
+                      2); // Disesuaikan agar Minggu di kolom pertama
+              final bool isCurrentMonth =
+                  dayOffset >= 0 && dayOffset < daysInMonth;
+              final dayNumber = isCurrentMonth ? dayOffset + 1 : 0;
+
+              DateTime? cellDate;
+              if (isCurrentMonth) {
+                cellDate = DateTime(year, month, dayNumber);
+              }
+
+              // Cek apakah hari ini
+              final isToday =
+                  cellDate != null &&
+                  cellDate.year == _now.year &&
+                  cellDate.month == _now.month &&
+                  cellDate.day == _now.day;
+
+              // Cek apakah ada event
+              DateTime? eventKey;
+              if (cellDate != null) {
+                eventKey = DateTime(
+                  cellDate.year,
+                  cellDate.month,
+                  cellDate.day,
+                );
+              }
+              final hasEvent =
+                  eventKey != null && _eventsMap.containsKey(eventKey);
+
+              return GestureDetector(
+                onTap: isCurrentMonth
+                    ? () {
+                        _removePopup();
+                        if (cellDate != null) {
+                          final keyDate = DateTime(
+                            cellDate.year,
+                            cellDate.month,
+                            cellDate.day,
+                          );
+                          if (_eventsMap.containsKey(keyDate)) {
+                            setState(() {
+                              _selectedEventDate = keyDate;
+                              _selectedEvent = _eventsMap[keyDate];
+                            });
+
+                            // Tampilkan popup overlay
+                            _showPopupOverlay(
+                              context,
+                              keyDate,
+                              _eventsMap[keyDate]!,
+                            );
+                          } else {
+                            setState(() {
+                              _selectedEvent = null;
+                              _selectedEventDate = null;
+                            });
+                          }
+                        }
+                      }
+                    : null,
+                child: Container(
+                  margin: const EdgeInsets.all(1),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Container utama
+                      Container(
+                        width: 28, // Ukuran lebih kecil
+                        height: 28, // Ukuran lebih kecil
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isCurrentMonth
+                              ? Colors.white
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: isToday
+                                ? Colors.red.withOpacity(
+                                    0.8,
+                                  ) // Border merah untuk hari ini
+                                : isCurrentMonth
+                                ? Colors
+                                      .grey
+                                      .shade300 // Border abu-abu tipis untuk hari aktif
+                                : Colors.transparent,
+                            width: isToday ? 2 : 1,
+                          ),
+                          gradient: isToday
+                              ? LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.red.withOpacity(0.1),
+                                    Colors.white,
+                                  ],
+                                )
+                              : null,
+                        ),
+                        child: Center(
+                          child: Text(
+                            isCurrentMonth ? dayNumber.toString() : '',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isToday
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isCurrentMonth
+                                  ? (isToday
+                                        ? Colors
+                                              .red // Warna merah untuk hari ini
+                                        : isDecember2025 && dayOffset < 0
+                                        ? Colors
+                                              .grey // Warna abu-abu untuk hari sebelum Desember 2025
+                                        : Colors.black)
+                                  : Colors.transparent,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Titik merah untuk menandai event (ditempatkan di bawah)
+                      if (hasEvent && isCurrentMonth)
+                        Positioned(
+                          bottom: 1,
+                          child: Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Legenda
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Legenda hari ini
+              Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.red, width: 2),
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Hari Ini',
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+
+              // Legenda event
+              Row(
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade300),
+                          color: Colors.white,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        child: Container(
+                          width: 3,
+                          height: 3,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
+  }
+
+  void _showPopupOverlay(
+    BuildContext context,
+    DateTime date,
+    Map<String, dynamic> event,
+  ) {
+    _removePopup();
+
+    final overlayState = Overlay.of(context);
+    final renderBox = context.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+
+    _popupOverlay = OverlayEntry(
+      builder: (context) => Positioned(
+        top: position.dy - 100, // Atur posisi popup
+        left: position.dx + 50,
+        child: Material(
+          elevation: 4,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  DateFormat('dd MMMM yyyy').format(date),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  event['title']?.toString() ?? 'Kegiatan',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlayState.insert(_popupOverlay!);
+
+    // Hilangkan popup setelah 3 detik
+    Future.delayed(const Duration(seconds: 3), () {
+      _removePopup();
+    });
   }
 
   Widget _buildProfileMenuItem(
