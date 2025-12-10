@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spareapp_unhas/data/services/auth_service.dart';
+import 'package:spareapp_unhas/data/services/route_guard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -99,9 +100,15 @@ class _LoginPageState extends State<LoginPage> {
       // Persist credentials if requested
       _saveOrClearCredentials();
 
+      // Set user info in RouteGuard for session management
+      final username = _usernameController.text;
+      final userType = result['userType'] as String?;
+      if (userType != null) {
+        await RouteGuard.setUserInfo(username: username, userType: userType);
+      }
+
       // Navigate based on userType
       if (mounted) {
-        final userType = result['userType'] as String?;
         if (userType == 'admin') {
           Navigator.of(context).pushReplacementNamed('/home');
         } else {
