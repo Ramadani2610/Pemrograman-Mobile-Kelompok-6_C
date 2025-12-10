@@ -10,13 +10,11 @@ class MockBookingService {
 
   void clear() => _items.clear();
 
-  // ====== CRUD DASAR ======
-
   Booking add(Booking b) {
     final item = Booking(
       id: b.id.isNotEmpty ? b.id : _generateId(),
-      name: b.name,
       userId: b.userId,
+      name: b.name,
       facilityId: b.facilityId,
       roomId: b.roomId,
       startDate: b.startDate,
@@ -32,6 +30,7 @@ class MockBookingService {
       rejectedBy: b.rejectedBy,
       rejectedReason: b.rejectedReason,
       actualReturnTime: b.actualReturnTime,
+      returnedBy: b.returnedBy,
     );
     _items.add(item);
     return item;
@@ -45,10 +44,10 @@ class MockBookingService {
     }
   }
 
-  bool _replace(Booking newBooking) {
-    final index = _items.indexWhere((b) => b.id == newBooking.id);
+  bool update(String id, Booking updated) {
+    final index = _items.indexWhere((b) => b.id == id);
     if (index == -1) return false;
-    _items[index] = newBooking;
+    _items[index] = updated;
     return true;
   }
 
@@ -56,17 +55,16 @@ class MockBookingService {
 
   List<Booking> getAll() {
     final list = List<Booking>.from(_items);
-    list.sort((a, b) => b.startDate.compareTo(a.startDate)); // terbaru di atas
+    list.sort((a, b) => b.startDate.compareTo(a.startDate));
     return list;
   }
 
   List<Booking> getByStatus(String status) {
     final list = _items.where((b) => b.status == status).toList();
-    list.sort((a, b) => b.startDate.compareTo(a.startDate)); // terbaru di atas
+    list.sort((a, b) => b.startDate.compareTo(a.startDate));
     return list;
   }
 
-  // (opsional) kalau mau filter tambahan
   List<Booking> getByType(String type) {
     if (type == 'class') {
       return _items
@@ -83,71 +81,66 @@ class MockBookingService {
     return getAll();
   }
 
-  // ======= UPDATE STATUS (immutable lewat copyWith) =======
+  // ======= UPDATE STATUS =======
 
   bool _updateStatus(String id, String newStatus) {
-    final booking = getById(id);
-    if (booking == null) return false;
+    final index = _items.indexWhere((b) => b.id == id);
+    if (index == -1) return false;
 
-    final updated = booking.copyWith(
+    final old = _items[index];
+    _items[index] = old.copyWith(
       status: newStatus,
       updatedAt: DateTime.now(),
     );
-    return _replace(updated);
+    return true;
   }
 
-  // adminId tidak dipakai di mock, tapi disiapkan untuk backend
   bool approve(String id, [String? adminId]) => _updateStatus(id, 'approved');
 
   bool reject(String id, {String? reason, String? rejectedBy}) {
-    final booking = getById(id);
-    if (booking == null) return false;
+    final old = getById(id);
+    if (old == null) return false;
 
-    final updated = booking.copyWith(
+    final updated = old.copyWith(
       status: 'rejected',
-      rejectedReason: reason,
       rejectedBy: rejectedBy,
+      rejectedReason: reason,
       updatedAt: DateTime.now(),
     );
 
-    return _replace(updated);
+    return update(id, updated);
   }
 
-  /// Menandai peminjaman sebagai selesai.
-  /// - Untuk **fasilitas**: wajib menyimpan `actualReturnTime`.
-  /// - Untuk **kelas**: boleh tidak memakai `actualReturnTime`.
+  /// Tandai sudah dikembalikan.
+  /// - Jika [actualReturnTime] null → pakai DateTime.now()
+  /// - Jika [returnedBy] null → boleh dibiarkan null
   bool markReturned(
     String id, {
     DateTime? actualReturnTime,
-    String? returnedBy, // belum dipakai di mock
+    String? returnedBy,
   }) {
-    final booking = getById(id);
-    if (booking == null) return false;
+    final old = getById(id);
+    if (old == null) return false;
 
-    DateTime? returnTime = booking.actualReturnTime;
+    final now = DateTime.now();
+    final actual = actualReturnTime ?? now;
 
-    // Hanya untuk FASILITAS kita isi waktu pengembalian sekarang / input admin
-    if ((booking.facilityId ?? '').isNotEmpty) {
-      returnTime = actualReturnTime ?? DateTime.now();
-    }
-
-    final updated = booking.copyWith(
+    final updated = old.copyWith(
       status: 'returned',
-      actualReturnTime: returnTime,
-      updatedAt: DateTime.now(),
+      updatedAt: now,
+      actualReturnTime: actual,
+      returnedBy: returnedBy,
     );
 
-    return _replace(updated);
+    return update(id, updated);
   }
 
   // ======= DUMMY DATA =======
-
   void seed() {
     if (_items.isNotEmpty) return;
 
     final now = DateTime.now();
 
-    // 1. Peminjaman KELAS - pending
     add(
       Booking(
         id: _generateId(),
@@ -165,7 +158,6 @@ class MockBookingService {
       ),
     );
 
-    // 2. Peminjaman FASILITAS - approved (sedang digunakan)
     add(
       Booking(
         id: _generateId(),
@@ -183,7 +175,6 @@ class MockBookingService {
       ),
     );
 
-    // 3. Peminjaman FASILITAS - selesai (returned) + contoh actualReturnTime
     add(
       Booking(
         id: _generateId(),
@@ -198,11 +189,11 @@ class MockBookingService {
         className: 'TM 2021 A',
         courseName: 'Praktikum Mekanika',
         department: 'Teknik Mesin',
-        actualReturnTime: now.subtract(const Duration(days: 1, hours: -1)),
+        actualReturnTime: now.subtract(const Duration(days: 1, hours: -2)),
+        returnedBy: 'admin001',
       ),
     );
 
-    // 4. Contoh peminjaman DITOLAK (rejected)
     add(
       Booking(
         id: _generateId(),
@@ -217,8 +208,8 @@ class MockBookingService {
         className: 'TI 2022 C',
         courseName: 'Metode Penelitian',
         department: 'Teknik Informatika',
-        rejectedReason: 'Tidak ada surat izin resmi dari departemen.',
         rejectedBy: 'admin001',
+        rejectedReason: 'Tidak ada surat pengantar resmi.',
       ),
     );
   }
