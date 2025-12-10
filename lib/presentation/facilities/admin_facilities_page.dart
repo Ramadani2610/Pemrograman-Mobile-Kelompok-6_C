@@ -15,7 +15,7 @@ class AdminFacilitiesPage extends StatelessWidget {
       'available': 50,
       'borrowed': 30,
       'broken': 5,
-      'image': 'assets/icons/proyektor.jpg',
+      'image': 'lib/assets/icons/proyektor.jpg',
     },
     {
       'name': 'Terminal',
@@ -76,7 +76,7 @@ class AdminFacilitiesPage extends StatelessWidget {
               Icons.add,
               color: AppColors.mainGradientStart,
             ),
-            onPressed: () => AdminAddFacilityDialog.show(context),
+            onPressed: () =>  AdminAddFacilityPage.navigate(context),
           ),
         ],
       ),
