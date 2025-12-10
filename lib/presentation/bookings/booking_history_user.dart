@@ -168,10 +168,10 @@ class _BookingHistoryUserPageState extends State<BookingHistoryUserPage> {
               Navigator.pushReplacementNamed(context, '/home_user');
               break;
             case 1:
-              Navigator.pushReplacementNamed(context, '/manage');
+              Navigator.pushReplacementNamed(context, '/manage_user');
               break;
             case 2:
-              Navigator.pushReplacementNamed(context, '/notifications');
+              Navigator.pushReplacementNamed(context, '/user_notification');
               break;
             case 3:
               // already here

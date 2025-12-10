@@ -11,18 +11,19 @@ class Booking {
   final int quantity;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? actualReturnTime; // <- boleh null
 
   // --- Info akademik tambahan ---
-  // Kelas yang MEMINJAM (bukan jadwal rutin)
-  final String? className;      // contoh: "TI 2023 A"
-  final String? courseName;     // contoh: "Pemrograman Mobile C"
-  final String? department;     // contoh: "Teknik Informatika"
+  final String? className;    // contoh: "TI 2023 A"
+  final String? courseName;   // contoh: "Pemrograman Mobile C"
+  final String? department;   // contoh: "Teknik Informatika"
 
-  // --- Info penolakan (untuk tab Ditolak) ---
+  // --- Info penolakan ---
   final String? rejectedBy;      // id admin yang menolak
   final String? rejectedReason;  // alasan ditolak
 
-  const Booking({
+  // constructor TIDAK perlu const
+  Booking({
     required this.id,
     this.userId,
     this.name,
@@ -35,13 +36,14 @@ class Booking {
     this.quantity = 1,
     DateTime? createdAt,
     DateTime? updatedAt,
+    this.actualReturnTime,
     this.className,
     this.courseName,
     this.department,
     this.rejectedBy,
     this.rejectedReason,
-  })  : createdAt = createdAt ?? startDate,
-        updatedAt = updatedAt ?? (createdAt ?? startDate);
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? (createdAt ?? DateTime.now());
 
   factory Booking.fromMap(Map<String, dynamic> map) {
     return Booking(
@@ -66,6 +68,9 @@ class Booking {
       department: map['department'] as String?,
       rejectedBy: map['rejectedBy'] as String?,
       rejectedReason: map['rejectedReason'] as String?,
+      actualReturnTime: map['actualReturnTime'] != null
+          ? DateTime.parse(map['actualReturnTime'] as String)
+          : null,
     );
   }
 
@@ -88,6 +93,7 @@ class Booking {
       'department': department,
       'rejectedBy': rejectedBy,
       'rejectedReason': rejectedReason,
+      'actualReturnTime': actualReturnTime?.toIso8601String(),
     };
   }
 
@@ -104,6 +110,7 @@ class Booking {
     String? department,
     String? rejectedBy,
     String? rejectedReason,
+    DateTime? actualReturnTime,
   }) {
     return Booking(
       id: id,
@@ -123,6 +130,7 @@ class Booking {
       department: department ?? this.department,
       rejectedBy: rejectedBy ?? this.rejectedBy,
       rejectedReason: rejectedReason ?? this.rejectedReason,
+      actualReturnTime: actualReturnTime ?? this.actualReturnTime,
     );
   }
 }

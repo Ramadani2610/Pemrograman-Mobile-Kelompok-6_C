@@ -335,15 +335,6 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                     style: AppTextStyles.heading2,
                   ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: () {
-                      // TODO: nanti arahkan ke halaman chat
-                    },
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: AppColors.mainGradientStart,
-                    ),
-                  ),
                 ],
               ),
             ),

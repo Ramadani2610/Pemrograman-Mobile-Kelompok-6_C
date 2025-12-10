@@ -10,6 +10,8 @@ class MockBookingService {
 
   void clear() => _items.clear();
 
+  // ====== CRUD DASAR ======
+
   Booking add(Booking b) {
     final item = Booking(
       id: b.id.isNotEmpty ? b.id : _generateId(),
@@ -27,9 +29,27 @@ class MockBookingService {
       className: b.className,
       courseName: b.courseName,
       department: b.department,
+      rejectedBy: b.rejectedBy,
+      rejectedReason: b.rejectedReason,
+      actualReturnTime: b.actualReturnTime,
     );
     _items.add(item);
     return item;
+  }
+
+  Booking? getById(String id) {
+    try {
+      return _items.firstWhere((b) => b.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _replace(Booking newBooking) {
+    final index = _items.indexWhere((b) => b.id == newBooking.id);
+    if (index == -1) return false;
+    _items[index] = newBooking;
+    return true;
   }
 
   // ======= QUERY =======
@@ -63,39 +83,62 @@ class MockBookingService {
     return getAll();
   }
 
-  // ======= UPDATE STATUS =======
+  // ======= UPDATE STATUS (immutable lewat copyWith) =======
 
   bool _updateStatus(String id, String newStatus) {
-    final index = _items.indexWhere((b) => b.id == id);
-    if (index == -1) return false;
+    final booking = getById(id);
+    if (booking == null) return false;
 
-    final old = _items[index];
-    _items[index] = old.copyWith(
+    final updated = booking.copyWith(
       status: newStatus,
       updatedAt: DateTime.now(),
     );
-    return true;
+    return _replace(updated);
   }
 
   // adminId tidak dipakai di mock, tapi disiapkan untuk backend
   bool approve(String id, [String? adminId]) => _updateStatus(id, 'approved');
 
-  bool reject(String id, String adminId, {String? reason}) {
-    final index = _items.indexWhere((b) => b.id == id);
-    if (index == -1) return false;
+  bool reject(String id, {String? reason, String? rejectedBy}) {
+    final booking = getById(id);
+    if (booking == null) return false;
 
-  final old = _items[index];
-  _items[index] = old.copyWith(
-    status: 'rejected',
-    rejectedReason: reason,
-    updatedAt: DateTime.now(),
-  );
-  return true;
-}
+    final updated = booking.copyWith(
+      status: 'rejected',
+      rejectedReason: reason,
+      rejectedBy: rejectedBy,
+      updatedAt: DateTime.now(),
+    );
 
+    return _replace(updated);
+  }
 
-  bool markReturned(String id, [String? adminId]) =>
-      _updateStatus(id, 'returned');
+  /// Menandai peminjaman sebagai selesai.
+  /// - Untuk **fasilitas**: wajib menyimpan `actualReturnTime`.
+  /// - Untuk **kelas**: boleh tidak memakai `actualReturnTime`.
+  bool markReturned(
+    String id, {
+    DateTime? actualReturnTime,
+    String? returnedBy, // belum dipakai di mock
+  }) {
+    final booking = getById(id);
+    if (booking == null) return false;
+
+    DateTime? returnTime = booking.actualReturnTime;
+
+    // Hanya untuk FASILITAS kita isi waktu pengembalian sekarang / input admin
+    if ((booking.facilityId ?? '').isNotEmpty) {
+      returnTime = actualReturnTime ?? DateTime.now();
+    }
+
+    final updated = booking.copyWith(
+      status: 'returned',
+      actualReturnTime: returnTime,
+      updatedAt: DateTime.now(),
+    );
+
+    return _replace(updated);
+  }
 
   // ======= DUMMY DATA =======
 
@@ -140,7 +183,7 @@ class MockBookingService {
       ),
     );
 
-    // 3. Peminjaman FASILITAS - selesai (returned)
+    // 3. Peminjaman FASILITAS - selesai (returned) + contoh actualReturnTime
     add(
       Booking(
         id: _generateId(),
@@ -155,6 +198,7 @@ class MockBookingService {
         className: 'TM 2021 A',
         courseName: 'Praktikum Mekanika',
         department: 'Teknik Mesin',
+        actualReturnTime: now.subtract(const Duration(days: 1, hours: -1)),
       ),
     );
 
@@ -173,6 +217,8 @@ class MockBookingService {
         className: 'TI 2022 C',
         courseName: 'Metode Penelitian',
         department: 'Teknik Informatika',
+        rejectedReason: 'Tidak ada surat izin resmi dari departemen.',
+        rejectedBy: 'admin001',
       ),
     );
   }
