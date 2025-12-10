@@ -14,7 +14,6 @@ import 'package:spareapp_unhas/presentation/auth/forgot_password.dart';
 import 'package:spareapp_unhas/presentation/home/home_page.dart';
 import 'package:spareapp_unhas/presentation/profile/profile_page.dart';
 import 'package:spareapp_unhas/presentation/home/user_home_page.dart';
-//import 'package:spareapp_unhas/presentation/facilities/facilities_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/admin_facilities_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/facility_detail_tabs_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/booking_history_page.dart';
@@ -70,13 +69,11 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(), // ADMIN HOME PAGE
         '/home_user': (context) => const UserHomePage(), // USER HOME PAGE
         // FACILITIES
-        '/facilities': (context) => const FacilitiesPage(),
-        '/admin_facilities': (context) => const AdminFacilitiesPage(),
-        // '/admin_manage_facilities': (context) => const AdminManageFacilitiesPage(),
-        '/facility_detail_tabs': (context) => const FacilityDetailTabsPage(facilityName: ''),
-        '/facilities': (context) => const FacilitiesPage(), // USER FACILITIES PAGE
-        '/admin_facilities': (context) => const AdminFacilitiesPage(), // ADMIN FACILITIES PAGE
-
+      
+        '/admin_facilities': (context) =>
+            const AdminFacilitiesPage(), // ADMIN FACILITIES PAGE
+        '/facility_detail_tabs': (context) =>
+            const FacilityDetailTabsPage(facilityName: ''),
         // BOOKINGS
         '/booking_history': (context) =>
             const BookingHistoryPage(), // BOOKING HISTORY PAGE
