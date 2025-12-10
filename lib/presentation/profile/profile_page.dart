@@ -73,13 +73,12 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        // Tambahkan scroll agar aman di layar kecil
         child: Column(
           children: [
-            // --- HEADER & FOTO (Metode Transform) ---
+            // --- HEADER & FOTO (Metode Padding agar aman) ---
             Stack(
               alignment: Alignment.topCenter,
-              clipBehavior: Clip.none, // Biarkan visual meluap
+              clipBehavior: Clip.none,
               children: [
                 // 1. Kotak Merah Header
                 Container(
@@ -135,11 +134,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
 
-                // 3. Foto Profil (Menggunakan Transform agar tidak error hit-test)
+                // 3. Foto Profil
                 Padding(
-                  padding: const EdgeInsets.only(
-                    top: 130.0,
-                  ), // Dorong ke bawah header
+                  padding: const EdgeInsets.only(top: 130.0),
                   child: Container(
                     width: 105,
                     height: 105,
@@ -200,7 +197,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 16),
                   _buildProfileField(context, 'Email', _email),
                   const SizedBox(height: 32),
-                  // Tombol Edit Profil
+                  // Tombol Menuju Edit Profil
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -298,7 +295,7 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 // ===============================================================
-// 2. HALAMAN EDIT PROFIL (DIPERBAIKI AGAR BISA KLIK)
+// 2. HALAMAN EDIT PROFIL (PERBAIKAN UX & LOADING)
 // ===============================================================
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -317,12 +314,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final ImagePicker _picker = ImagePicker();
   File? _selectedImageFile;
   String? _currentPhotoUrl;
-  bool _isLoading = false;
+
+  // Status Loading Baru (Untuk UX yang lebih baik)
+  bool _isInitializing = true; // Loading awal saat ambil data
+  bool _isSaving = false; // Loading saat proses simpan/upload
 
   // --- CONFIG CLOUDINARY ---
+  // JANGAN LUPA UPDATE INI YA!
   final cloudinary = CloudinaryPublic(
-    'dgk74prij',
-    'spare_app_preset',
+    'dgk74prij', // Cloud Name Kamu
+    'spare_app_preset', // Upload Preset Kamu
     cache: false,
   );
 
@@ -332,14 +333,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _loadInitialData();
   }
 
+  // Load data awal (Anti Flicker)
   Future<void> _loadInitialData() async {
+    setState(() => _isInitializing = true); // Mulai loading
+
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
-      if (doc.exists) {
+
+      if (doc.exists && mounted) {
         final data = doc.data() as Map<String, dynamic>;
         setState(() {
           _namaController.text = data['nama'] ?? '';
@@ -355,12 +360,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
             _jabatanController.text = 'Dosen';
           else
             _jabatanController.text = 'Mahasiswa';
+
+          _isInitializing = false; // Selesai loading
         });
       }
     }
   }
 
-  // FUNGSI BUKA GALERI (WEB: BUKA FILE EXPLORER)
+  // FUNGSI BUKA GALERI (Fix untuk Web & Mobile)
   Future<void> _pickImage() async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -378,30 +385,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  // FUNGSI SIMPAN
+  // FUNGSI SIMPAN (Dengan Overlay Loading)
   Future<void> _saveProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    setState(() => _isLoading = true);
+    setState(() => _isSaving = true); // Nyalakan overlay loading
 
     try {
       String? newPhotoUrl = _currentPhotoUrl;
 
-      // Upload ke Cloudinary
+      // 1. Upload ke Cloudinary (Jika ada file baru)
       if (_selectedImageFile != null) {
+        // Tambahkan timestamp di publicId agar foto tidak kena cache browser/HP
+        String uniqueId =
+            '${user.uid}_${DateTime.now().millisecondsSinceEpoch}';
+
         CloudinaryResponse response = await cloudinary.uploadFile(
           CloudinaryFile.fromFile(
             _selectedImageFile!.path,
             resourceType: CloudinaryResourceType.Image,
             folder: 'user_photos',
-            publicId: user.uid,
+            publicId: uniqueId,
           ),
         );
         newPhotoUrl = response.secureUrl;
       }
 
-      // Update Firestore
+      // 2. Update Firestore
       Map<String, dynamic> updateData = {
         'nama': _namaController.text.trim(),
         'no_hp': _whatsappController.text.trim(),
@@ -416,13 +427,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
           .update(updateData);
 
       if (mounted) {
+        // Tunda sebentar untuk UX yang lebih halus
+        await Future.delayed(const Duration(milliseconds: 500));
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profil berhasil disimpan!'),
+            content: Text('Profil berhasil diperbarui!'),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context); // Tutup halaman
       }
     } catch (e) {
       debugPrint("Error: $e");
@@ -432,8 +446,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSaving = false); // Matikan loading
     }
+  }
+
+  // Helper untuk menentukan gambar avatar
+  ImageProvider _getAvatarImage() {
+    if (_selectedImageFile != null) {
+      // Prioritas 1: File lokal baru dipilih
+      return FileImage(_selectedImageFile!);
+    } else if (_currentPhotoUrl != null && _currentPhotoUrl!.isNotEmpty) {
+      // Prioritas 2: URL dari internet (Cloudinary)
+      return NetworkImage(_currentPhotoUrl!);
+    }
+    // Prioritas 3: Default asset
+    return const AssetImage('lib/assets/icons/foto-profil.jpg');
   }
 
   @override
@@ -450,126 +477,217 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              // Scroll view agar aman dari overflow keyboard
-              child: Column(
-                children: [
-                  // --- HEADER EDIT (PERBAIKAN VISUAL & KLIK) ---
-                  Stack(
-                    alignment: Alignment.topCenter,
-                    clipBehavior: Clip.none,
+      // Gunakan Stack agar bisa menumpuk Loading Overlay di atas Form
+      body: Stack(
+        children: [
+          // LAYER 1: KONTEN FORMULIR
+          _isInitializing
+              ? const Center(
+                  child: CircularProgressIndicator(color: primaryColor),
+                )
+              : SingleChildScrollView(
+                  child: Column(
                     children: [
-                      // 1. Header Merah
-                      Container(
-                        width: double.infinity,
-                        height: 180,
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [primaryColor, Color(0xFFE74C3C)],
+                      // --- HEADER EDIT ---
+                      Stack(
+                        alignment: Alignment.topCenter,
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 180,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [primaryColor, Color(0xFFE74C3C)],
+                              ),
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(100),
+                                bottomRight: Radius.circular(100),
+                              ),
+                            ),
+                            child: SafeArea(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  10,
+                                  16,
+                                  8,
+                                ),
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: GestureDetector(
+                                    onTap: () => Navigator.pop(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_back,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(100),
-                            bottomRight: Radius.circular(100),
+
+                          Positioned(
+                            top: 60,
+                            child: Text(
+                              'Edit Profil',
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 28,
+                                    fontFamily: 'Poppins',
+                                  ),
+                            ),
                           ),
-                        ),
-                        child: SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
+
+                          // FOTO & TOMBOL KAMERA
+                          Padding(
+                            padding: const EdgeInsets.only(top: 130.0),
+                            child: Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                Container(
+                                  width: 105,
+                                  height: 105,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: Colors.white,
-                                      width: 2,
+                                      width: 4,
+                                    ),
+                                    color: Colors.grey[200],
+                                    image: DecorationImage(
+                                      image: _getAvatarImage(), // Pakai Helper
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
-                                  child: const Icon(
-                                    Icons.arrow_back,
-                                    color: Colors.white,
-                                    size: 24,
+                                ),
+
+                                // TOMBOL KAMERA (INKWELL)
+                                InkWell(
+                                  onTap: _pickImage,
+                                  borderRadius: BorderRadius.circular(50),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: primaryColor,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Text(
+                        _namaController.text.isNotEmpty
+                            ? _namaController.text
+                            : 'User',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _emailController.text,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.black54,
+                          fontFamily: 'Poppins',
                         ),
                       ),
 
-                      // 2. Judul
-                      Positioned(
-                        top: 60,
-                        child: Text(
-                          'Edit Profil',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 28,
-                                fontFamily: 'Poppins',
-                              ),
-                        ),
-                      ),
-
-                      // 3. FOTO & TOMBOL KAMERA (PERBAIKAN)
-                      // Menggunakan Padding top alih-alih Positioned agar ada di 'flow' layout
-                      // Ini memastikan tombol kamera BISA DIKLIK karena tidak "mengambang" di luar area stack
+                      // FORM FIELDS
                       Padding(
-                        padding: const EdgeInsets.only(top: 130.0),
-                        child: Stack(
-                          alignment: Alignment.bottomRight,
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 105,
-                              height: 105,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                color: Colors.grey[200],
-                                image: DecorationImage(
-                                  image: _selectedImageFile != null
-                                      ? FileImage(_selectedImageFile!)
-                                            as ImageProvider
-                                      : (_currentPhotoUrl != null &&
-                                            _currentPhotoUrl!.isNotEmpty)
-                                      ? NetworkImage(_currentPhotoUrl!)
-                                      : const AssetImage(
-                                          'lib/assets/icons/foto-profil.jpg',
-                                        ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                            _buildEditField(
+                              context,
+                              'Nama Lengkap',
+                              _namaController,
                             ),
+                            const SizedBox(height: 16),
+                            _buildEditField(
+                              context,
+                              _jabatanController.text == 'Mahasiswa'
+                                  ? 'NIM'
+                                  : 'NIP',
+                              _nipController,
+                              isReadOnly: true,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildEditField(
+                              context,
+                              'Jabatan',
+                              _jabatanController,
+                              isReadOnly: true,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildEditField(
+                              context,
+                              'Nomor Whatsapp',
+                              _whatsappController,
+                              keyboardType: TextInputType.phone,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildEditField(
+                              context,
+                              'Email',
+                              _emailController,
+                              isReadOnly: true,
+                            ),
+                            const SizedBox(height: 32),
 
-                            // TOMBOL KAMERA (INKWELL UNTUK EFEK KLIK)
-                            InkWell(
-                              onTap: _pickImage, // Fungsi buka galeri
-                              borderRadius: BorderRadius.circular(50),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: primaryColor,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 3,
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
                                   ),
                                 ),
-                                child: const Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 20,
+                                onPressed: () {
+                                  _showSaveDialog(context);
+                                },
+                                child: Text(
+                                  'Simpan',
+                                  style: Theme.of(context).textTheme.labelLarge
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Poppins',
+                                      ),
                                 ),
                               ),
                             ),
@@ -578,101 +696,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ],
                   ),
+                ),
 
-                  const SizedBox(height: 10),
-
-                  // Preview Nama & Email
-                  Text(
-                    _namaController.text.isNotEmpty
-                        ? _namaController.text
-                        : 'User',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Poppins',
-                    ),
+          // LAYER 2: LOADING OVERLAY (POP UP SAAT MENYIMPAN)
+          if (_isSaving)
+            Container(
+              color: Colors.black.withOpacity(0.5), // Layar Gelap
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _emailController.text,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.black54,
-                      fontFamily: 'Poppins',
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(color: primaryColor),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Menyimpan Perubahan...",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-
-                  // Edit Form
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildEditField(
-                          context,
-                          'Nama Lengkap',
-                          _namaController,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildEditField(
-                          context,
-                          _jabatanController.text == 'Mahasiswa'
-                              ? 'NIM'
-                              : 'NIP',
-                          _nipController,
-                          isReadOnly: true,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildEditField(
-                          context,
-                          'Jabatan',
-                          _jabatanController,
-                          isReadOnly: true,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildEditField(
-                          context,
-                          'Nomor Whatsapp',
-                          _whatsappController,
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildEditField(
-                          context,
-                          'Email',
-                          _emailController,
-                          isReadOnly: true,
-                        ),
-                        const SizedBox(height: 32),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            onPressed: () {
-                              _showSaveDialog(context);
-                            },
-                            child: Text(
-                              'Simpan',
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Poppins',
-                                  ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
+        ],
+      ),
       bottomNavigationBar: BottomNavBar(
         selectedIndex: 4,
         onItemTapped: (index) {},
@@ -762,8 +819,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
               onPressed: () {
-                Navigator.pop(context);
-                _saveProfile();
+                Navigator.pop(context); // Tutup Dialog Konfirmasi
+                _saveProfile(); // Jalankan Simpan
               },
               child: Text(
                 'Simpan',
