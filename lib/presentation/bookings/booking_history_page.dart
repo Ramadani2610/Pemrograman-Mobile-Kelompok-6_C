@@ -554,31 +554,11 @@ class _BookingHistoryAdminPageState extends State<BookingHistoryAdminPage> {
       ),
 
       // ------- NAVBAR ADMIN -------
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedBottomIndex,
-        onItemTapped: (index) {
-          if (index == _selectedBottomIndex) return;
-          setState(() => _selectedBottomIndex = index);
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/home');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/manage');
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(context, '/notification');
-              break;
-            case 3:
-              // already here
-              break;
-            case 4:
-              Navigator.pushReplacementNamed(context, '/profile');
-              break;
-          }
-        },
+      bottomNavigationBar: const BottomNavBar(
+        selectedIndex: 3,
+        useRoleRouting: true,
       ),
+
     );
   }
 
