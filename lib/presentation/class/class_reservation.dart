@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:file_picker/file_picker.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/gradient_widgets.dart';
-import 'package:dropdown_search/dropdown_search.dart';
-
 
 class ClassReservationPage extends StatefulWidget {
   const ClassReservationPage({super.key});
@@ -26,7 +27,8 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
 
   // ----- state -----
   DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
 
   String? _selectedRoom;
   String? _selectedReason;
@@ -34,13 +36,13 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
 
   final TextEditingController _orgNameController = TextEditingController();
   final TextEditingController _eventNameController = TextEditingController();
-  final TextEditingController _letterController = TextEditingController();
+  PlatformFile? _letterFile; // upload file (foto/pdf)
+  int _toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
 
   @override
   void dispose() {
     _orgNameController.dispose();
     _eventNameController.dispose();
-    _letterController.dispose();
     super.dispose();
   }
 
@@ -58,19 +60,107 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
     }
   }
 
-  Future<void> _pickTime() async {
+  Future<void> _pickStartTime() async {
     final now = TimeOfDay.now();
     final result = await showTimePicker(
       context: context,
-      initialTime: _selectedTime ?? now,
+      initialTime: _startTime ?? now,
     );
     if (result != null) {
-      setState(() => _selectedTime = result);
+      setState(() => _startTime = result);
     }
+  }
+
+  Future<void> _pickEndTime() async {
+    final base = _startTime ?? TimeOfDay.now();
+    final result = await showTimePicker(
+      context: context,
+      initialTime: _endTime ?? base,
+    );
+    if (result != null) {
+      setState(() => _endTime = result);
+    }
+  }
+
+  Future<void> _pickLetterFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      setState(() {
+        _letterFile = result.files.first;
+      });
+    }
+  }
+
+  /// ====== VALIDASI FORM ======
+  String? _validateForm() {
+    final missing = <String>[];
+
+    if (_selectedDate == null) {
+      missing.add('• Tanggal');
+    }
+    if (_startTime == null) {
+      missing.add('• Waktu Mulai');
+    }
+    if (_endTime == null) {
+      missing.add('• Waktu Selesai');
+    }
+    if (_selectedRoom == null) {
+      missing.add('• Ruang Kelas');
+    }
+    if (_selectedReason == null) {
+      missing.add('• Alasan Reservasi');
+    }
+
+    // validasi lanjutan tergantung alasan
+    if (_selectedReason == _reasonClass) {
+      if (_selectedCourse == null) {
+        missing.add('• Mata Kuliah (untuk kelas pengganti/tambahan)');
+      }
+    }
+
+    if (_selectedReason == _reasonOrg) {
+      if (_orgNameController.text.trim().isEmpty) {
+        missing.add('• Nama Organisasi');
+      }
+      if (_eventNameController.text.trim().isEmpty) {
+        missing.add('• Nama Kegiatan');
+      }
+      if (_letterFile == null) {
+        missing.add('• Surat/Bukti Pengantar Peminjaman (file)');
+      }
+    }
+
+    // cek logika waktu kalau keduanya sudah terisi
+    if (_startTime != null && _endTime != null) {
+      final start = _toMinutes(_startTime!);
+      final end = _toMinutes(_endTime!);
+      if (end <= start) {
+        return 'Rentang waktu tidak valid.\n'
+            'Waktu selesai harus lebih besar dari waktu mulai.';
+      }
+    }
+
+    if (missing.isEmpty) return null;
+
+    return 'Mohon lengkapi data berikut:\n${missing.join('\n')}';
   }
 
   // ====== DIALOG FLOW ======
   Future<void> _onSubmit() async {
+    // validasi wajib isi
+    final errorMessage = _validateForm();
+    if (errorMessage != null) {
+      await _showInfoDialog(
+        title: 'Data Belum Lengkap',
+        message: errorMessage,
+      );
+      return;
+    }
+
     final confirmed = await _showConfirmDialog(
       title: 'Ajukan Peminjaman?',
       message:
@@ -80,17 +170,34 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
     );
     if (confirmed != true) return;
 
-    // di sini nanti panggil backend ajukan_peminjaman
+
+    // ====== DI SINI NANTI PANGGIL BACKEND ======
+    // Misalnya:
+    // await ClassReservationService.instance.createReservation(
+    //   date: _selectedDate!,
+    //   startTime: _startTime!,
+    //   endTime: _endTime!,
+    //   room: _selectedRoom!,
+    //   reason: _selectedReason!,
+    //   course: _selectedCourse,
+    //   orgName: _orgNameController.text,
+    //   eventName: _eventNameController.text,
+    //   attachment: _letterFile,
+    // );
+    //
+    // Backend akan menyimpan data dengan status "pending".
+    // Halaman Tinjau Peminjaman admin tinggal membaca semua booking
+    // dengan status = "pending" dari backend.
+
     await _showInfoDialog(
       title: 'Berhasil',
       message: 'Peminjaman kelas berhasil diajukan.',
     );
 
     if (!mounted) return;
-    // Kembali ke main_classroom
     Navigator.pushReplacementNamed(
       context,
-      '/main_classroom', // TODO: sesuaikan dengan nama route yang Prof pakai
+      '/main_classroom',
     );
   }
 
@@ -112,7 +219,7 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
     if (!mounted) return;
     Navigator.pushReplacementNamed(
       context,
-      '/main_classroom', // TODO: sesuaikan route
+      '/main_classroom',
     );
   }
 
@@ -203,16 +310,17 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
           '${_selectedDate!.month.toString().padLeft(2, '0')}-'
           '${_selectedDate!.year}';
 
-    final timeLabel = _selectedTime == null
-        ? 'Pilih Waktu'
-        : _selectedTime!.format(context);
+    final startLabel =
+        _startTime == null ? 'Waktu Mulai' : _startTime!.format(context);
+    final endLabel =
+        _endTime == null ? 'Waktu Selesai' : _endTime!.format(context);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
-            // AppBar custom (tanpa pakai widget AppBar bawaan supaya mirip desain)
+            // AppBar custom
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -220,6 +328,11 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, size: 18),
                     onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Reservasi Kelas',
+                    style: AppTextStyles.heading2,
                   ),
                   const Spacer(),
                   IconButton(
@@ -242,12 +355,6 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Judul
-                    Text(
-                      'Reservasi Kelas',
-                      style: AppTextStyles.heading1,
-                    ),
-                    const SizedBox(height: 4),
                     Text(
                       'Reservasi Kelas Manual',
                       style: AppTextStyles.body2.copyWith(
@@ -256,9 +363,25 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ---------- TANGGAL / WAKTU ----------
+                    // ---------- TANGGAL ----------
                     Text(
-                      'Tanggal/Waktu',
+                      'Tanggal',
+                      style: AppTextStyles.body1.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _PickerField(
+                      label: dateLabel,
+                      icon: Icons.calendar_today_outlined,
+                      onTap: _pickDate,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ---------- WAKTU MULAI & SELESAI ----------
+                    Text(
+                      'Waktu',
                       style: AppTextStyles.body1.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -268,17 +391,17 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                       children: [
                         Expanded(
                           child: _PickerField(
-                            label: dateLabel,
-                            icon: Icons.calendar_today_outlined,
-                            onTap: _pickDate,
+                            label: startLabel,
+                            icon: Icons.access_time,
+                            onTap: _pickStartTime,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _PickerField(
-                            label: timeLabel,
+                            label: endLabel,
                             icon: Icons.access_time,
-                            onTap: _pickTime,
+                            onTap: _pickEndTime,
                           ),
                         ),
                       ],
@@ -304,18 +427,14 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                           style: AppTextStyles.body1,
                         ),
                       ),
-
                       dropdownDecoratorProps: DropDownDecoratorProps(
                         dropdownSearchDecoration: _inputDecoration('Pilih Kelas'),
                       ),
-
-                      itemAsString: (String? item) => item ?? '',
-                      onChanged: (String? val) {
+                      itemAsString: (String item) => item,
+                      onChanged: (val) {
                         setState(() => _selectedRoom = val);
                       },
                     ),
-
-
 
                     const SizedBox(height: 20),
 
@@ -341,11 +460,10 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                       onChanged: (val) {
                         setState(() {
                           _selectedReason = val;
-                          // reset field lanjutan setiap ganti alasan
                           _selectedCourse = null;
                           _orgNameController.clear();
                           _eventNameController.clear();
-                          _letterController.clear();
+                          _letterFile = null;
                         });
                       },
                     ),
@@ -440,6 +558,7 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
 
   Widget _buildFollowUpSection() {
     if (_selectedReason == _reasonClass) {
+      // --- alasan: kelas pengganti/tambahan ---
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -460,20 +579,17 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
                 style: AppTextStyles.body1,
               ),
             ),
-
             dropdownDecoratorProps: DropDownDecoratorProps(
               dropdownSearchDecoration: _inputDecoration('Pilih Mata Kuliah'),
             ),
-
-            itemAsString: (String? item) => item ?? '',
-            onChanged: (String? val) {
+            itemAsString: (String item) => item,
+            onChanged: (val) {
               setState(() => _selectedCourse = val);
             },
           ),
         ],
       );
     }
-
 
     if (_selectedReason == _reasonOrg) {
       // --- alasan: agenda organisasi ---
@@ -513,11 +629,25 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
             ),
           ),
           const SizedBox(height: 6),
-          TextField(
-            controller: _letterController,
-            style: AppTextStyles.body1,
-            decoration: _inputDecoration(
-              'Tulis nomor surat / link drive / keterangan lain',
+          OutlinedButton.icon(
+            onPressed: _pickLetterFile,
+            style: OutlinedButton.styleFrom(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              side: const BorderSide(color: AppColors.border),
+              backgroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.upload_file, size: 18),
+            label: Text(
+              _letterFile == null
+                  ? 'Pilih file (JPG/PNG/PDF)'
+                  : _letterFile!.name,
+              style: AppTextStyles.body2.copyWith(
+                color: AppColors.titleText,
+              ),
             ),
           ),
         ],
@@ -567,7 +697,8 @@ class _PickerField extends StatelessWidget {
               child: Text(
                 label,
                 style: AppTextStyles.body2.copyWith(
-                  color: label.startsWith('Pilih')
+                  color: label.startsWith('Pilih') ||
+                          label.startsWith('Waktu')
                       ? AppColors.secondaryText
                       : AppColors.titleText,
                 ),
