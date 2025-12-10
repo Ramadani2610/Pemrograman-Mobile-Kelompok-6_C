@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// --- PERBAIKAN 1: Import Firebase dinyalakan ---
 import 'package:firebase_core/firebase_core.dart';
 import 'package:spareapp_unhas/firebase_options.dart';
 // ----------------------------------------------
@@ -17,21 +16,22 @@ import 'package:spareapp_unhas/presentation/profile/profile_page.dart';
 import 'package:spareapp_unhas/presentation/home/user_home_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/admin_facilities_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/facility_reservation.dart';
-import 'package:spareapp_unhas/presentation/facilities/facility_detail_tabs_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/booking_history_page.dart';
 import 'package:spareapp_unhas/presentation/bookings/booking_history_user.dart';
 import 'package:spareapp_unhas/presentation/bookings/review_booking.dart';
+import 'package:spareapp_unhas/presentation/bookings/user_notification.dart';
 import 'package:spareapp_unhas/presentation/manage/manage_page.dart';
+import 'package:spareapp_unhas/presentation/manage/manage_user.dart';
 import 'package:spareapp_unhas/presentation/class/main_classroom.dart';
 import 'package:spareapp_unhas/presentation/class/class_schedule.dart';
 import 'package:spareapp_unhas/presentation/class/search_classroom.dart';
 import 'package:spareapp_unhas/presentation/class/class_reservation.dart';
 
 // TAMBAHKAN IMPORT INI ↓
-import 'package:spareapp_unhas/data/models/facility_item_model.dart';
+// import 'package:spareapp_unhas/data/models/facility_item_model.dart';
 
 // Definisi warna utama (jika belum didefinisikan secara global)
-const Color primaryColor = Color(0xFFD32F2F);
+// const Color primaryColor = Color(0xFFD32F2F);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,9 +80,6 @@ class MyApp extends StatelessWidget {
         // FACILITIES
         '/admin_facilities': (context) =>
             const AdminFacilitiesPage(), // ADMIN FACILITIES PAGE
-        // Hapus route ini karena sekarang navigasi dilakukan dengan MaterialPageRoute
-        // '/facility_detail_tabs': (context) =>
-        //     const FacilityDetailTabsPage(facilityName: ''),
         '/user_facility_reservation': (context) =>
             const FacilityReservationPage(),
         // BOOKINGS
@@ -92,10 +89,13 @@ class MyApp extends StatelessWidget {
             const BookingHistoryUserPage(), // BOOKING HISTORY USER PAGE
         '/notification': (context) =>
             const ReviewBookingsPage(), // REVIEW BOOKINGS PAGE
+        '/user_notification': (context) =>
+            const UserNotificationsPage(), // USER NOTIFICATION PAGE
         // PROFILE
         '/profile': (context) => const ProfilePage(), // PROFILE PAGE
         // MANAGE
         '/manage': (context) => const ManagePage(), // MANAGE PAGE
+        '/manage_user' : (context) => const UserManagePage(), // MANAGE USER PAGE
         // CLASSROOM
         '/main_classroom': (context) =>
             const MainClassroomPage(), // MAIN CLASSROOM PAGE
