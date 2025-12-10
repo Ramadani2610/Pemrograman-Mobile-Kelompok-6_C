@@ -106,40 +106,7 @@ class _MainClassroomPageState extends State<MainClassroomPage> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 32),
-
-              // =============== AKTIVITAS TERAKHIR ===============
-              Text(
-                'Aktivitas Terakhir',
-                style: AppTextStyles.heading3.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              _activityItem(
-                title: 'Pemakaian kelas G01',
-                subtitle: 'Teknik Informatika • 13:00 - 14:40',
-                statusLabel: 'Berlangsung',
-                statusColor: AppColors.mainGradientStart,
-              ),
-              const SizedBox(height: 8),
-              _activityItem(
-                title: 'Reservasi Kelas 101',
-                subtitle: 'Agenda Organisasi HIMATIF',
-                statusLabel: 'Menunggu',
-                statusColor: Colors.orange.shade700,
-              ),
-              const SizedBox(height: 8),
-              _activityItem(
-                title: 'Kelas 201 dikembalikan',
-                subtitle: 'Metode Penelitian • Sesi selesai',
-                statusLabel: 'Selesai',
-                statusColor: Colors.green.shade700,
-              ),
-
-              const SizedBox(height: 80),
             ],
           ),
         ),
