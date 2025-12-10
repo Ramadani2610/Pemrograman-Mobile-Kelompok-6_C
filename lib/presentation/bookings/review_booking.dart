@@ -539,31 +539,11 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
       ),
 
       // ======= BOTTOM NAVBAR ADMIN =======
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedBottomIndex,
-        onItemTapped: (index) {
-          if (index == _selectedBottomIndex) return;
-          setState(() => _selectedBottomIndex = index);
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/home_user');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/manage');
-              break;
-            case 2:
-              // already here
-              break;
-            case 3:
-              Navigator.pushReplacementNamed(context, '/booking_history');
-              break;
-            case 4:
-              Navigator.pushReplacementNamed(context, '/profile');
-              break;
-          }
-        },
+      bottomNavigationBar: const BottomNavBar(
+        selectedIndex: 2,
+        useRoleRouting: true,
       ),
+
     );
   }
 

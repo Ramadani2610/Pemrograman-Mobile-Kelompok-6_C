@@ -406,31 +406,11 @@ class _UserNotificationsPageState extends State<UserNotificationsPage> {
       ),
 
       // ===== BOTTOM NAVBAR USER =====
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedBottomIndex,
-        onItemTapped: (index) {
-          if (index == _selectedBottomIndex) return;
-          setState(() => _selectedBottomIndex = index);
-
-          switch (index) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/home_user');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/manage_user');
-              break;
-            case 2:
-              // sudah di halaman notifikasi user
-              break;
-            case 3:
-              Navigator.pushReplacementNamed(context, '/user_history');
-              break;
-            case 4:
-              Navigator.pushReplacementNamed(context, '/profile');
-              break;
-          }
-        },
+      bottomNavigationBar: const BottomNavBar(
+        selectedIndex: 2,
+        useRoleRouting: true,
       ),
+
     );
   }
 
