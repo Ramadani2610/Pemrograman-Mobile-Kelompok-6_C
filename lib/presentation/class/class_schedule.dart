@@ -154,13 +154,6 @@ class _ClassSchedulePageState extends State<ClassSchedulePage> {
                     style: AppTextStyles.heading2,
                   ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: AppColors.mainGradientStart,
-                    ),
-                  ),
                 ],
               ),
             ),
