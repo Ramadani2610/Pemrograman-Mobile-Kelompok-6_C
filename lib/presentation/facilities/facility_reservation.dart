@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
@@ -16,6 +17,11 @@ class FacilityReservationPage extends StatefulWidget {
 class _FacilityReservationPageState extends State<FacilityReservationPage> {
   // ----- dummy data ruang kelas -----
   final List<String> _rooms = ['CR 100', 'CR 101', 'CR 102', 'Lab 201'];
+  final List<String> _courses = [
+    'Pemrograman Mobile C',
+    'Metode Penelitian',
+    'Sistem Basis Data',
+  ];
 
   // ----- fasilitas yang bisa dipinjam -----
   final List<String> _facilityOptions = const [
@@ -31,6 +37,7 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
   DateTime? _selectedDate;
   TimeOfDay? _pickupTime;
   String? _selectedRoom;
+  String? _selectedCourse;
   final Set<String> _selectedFacilities = {};
 
   final DateFormat _dateFormatter = DateFormat('dd-MM-yyyy');
@@ -77,11 +84,13 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
     if (_selectedRoom == null) {
       missing.add('• Ruang Kelas');
     }
+    if (_selectedCourse == null) {
+      missing.add('• Mata Kuliah');
+    }
     if (_selectedFacilities.isEmpty) {
       missing.add('• Minimal pilih 1 fasilitas');
     }
 
-    // contoh validasi tambahan jam ambil (opsional)
     // misal jam ambil tidak boleh sebelum jam 07.00
     if (_pickupTime != null) {
       final pickMinutes = _toMinutes(_pickupTime!);
@@ -96,6 +105,7 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
 
     return 'Mohon lengkapi data berikut:\n${missing.join('\n')}';
   }
+
 
   // ====== DIALOG FLOW ======
 
@@ -348,6 +358,33 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
                     ),
 
                     const SizedBox(height: 20),
+
+                    // ---------- MATA KULIAH ----------
+                    Text(
+                      'Mata Kuliah',
+                      style: AppTextStyles.body2.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownSearch<String>(
+                      items: _courses,
+                      selectedItem: _selectedCourse,
+                      popupProps: PopupProps.menu(
+                        showSearchBox: true,
+                        searchFieldProps: TextFieldProps(
+                          decoration: _inputDecoration('Cari mata kuliah...'),
+                          style: AppTextStyles.body1,
+                        ),
+                      ),
+                      dropdownDecoratorProps: DropDownDecoratorProps(
+                        dropdownSearchDecoration: _inputDecoration('Pilih Mata Kuliah'),
+                      ),
+                      itemAsString: (String item) => item,
+                      onChanged: (val) {
+                        setState(() => _selectedCourse = val);
+                      },
+                    ),
 
                     // ---------- FASILITAS ----------
                     Text(
