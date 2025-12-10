@@ -117,16 +117,18 @@ class _LoginPageState extends State<LoginPage> {
       }
     } else {
       // Show error snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result['message'],
-            style: AppTextStyles.body2.copyWith(color: Colors.white),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result['message'],
+              style: AppTextStyles.body2.copyWith(color: Colors.white),
+            ),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
           ),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+        );
+      }
     }
   }
 
