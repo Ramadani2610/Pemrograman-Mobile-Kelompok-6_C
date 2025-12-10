@@ -5,11 +5,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 
-// Import project kamu (Biarkan tetap ada)
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_text_styles.dart';
 import 'package:spareapp_unhas/core/widgets/bottom_nav_bar.dart';
 import 'package:spareapp_unhas/core/utils/no_animation_route.dart';
 
-const Color primaryColor = Color(0xFFD32F2F);
+const Color primaryColor = AppColors.mainGradientStart;
 
 // ===============================================================
 // 1. HALAMAN PROFIL (READ ONLY)
@@ -71,7 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -203,11 +204,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
+                      backgroundColor: AppColors.mainGradientStart,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
                       ),
+                      elevation: 2,
+                    ),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -220,10 +222,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       },
                       child: Text(
                         'Edit Profil',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        style: AppTextStyles.button1.copyWith(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -234,29 +235,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: const BottomNavBar(
         selectedIndex: 4,
-        onItemTapped: (index) {
-          switch (index) {
-            case 0:
-              if (_jabatan == 'Super Admin')
-                Navigator.pushNamed(context, '/home');
-              else
-                Navigator.pushNamed(context, '/home_user');
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/facilities');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/notification');
-              break;
-            case 3:
-              Navigator.pushNamed(context, '/booking_history');
-              break;
-            case 4:
-              break;
-          }
-        },
+        useRoleRouting: true,
       ),
     );
   }
@@ -278,16 +259,16 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border.all(color: const Color(0xFFE0B0AF)),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontFamily: 'Poppins',
-              color: Colors.black87,
+            style: AppTextStyles.body2.copyWith(
+              color: AppColors.titleText,
             ),
           ),
+
         ),
       ],
     );
@@ -431,18 +412,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
         await Future.delayed(const Duration(milliseconds: 500));
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profil berhasil diperbarui!'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Profil berhasil diperbarui!'),
+            backgroundColor: AppColors.mainGradientStart,
           ),
         );
+
         Navigator.pop(context); // Tutup halaman
       }
     } catch (e) {
       debugPrint("Error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Gagal: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -476,15 +461,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundColor,
       // Gunakan Stack agar bisa menumpuk Loading Overlay di atas Form
       body: Stack(
         children: [
           // LAYER 1: KONTEN FORMULIR
           _isInitializing
-              ? const Center(
-                  child: CircularProgressIndicator(color: primaryColor),
-                )
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.mainGradientStart,
+                ),
+              )
               : SingleChildScrollView(
                   child: Column(
                     children: [
@@ -672,11 +659,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               height: 50,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
+                                backgroundColor: AppColors.mainGradientStart,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
                                 ),
+                                elevation: 2,
+                              ),
                                 onPressed: () {
                                   _showSaveDialog(context);
                                 },
@@ -714,7 +702,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const CircularProgressIndicator(color: primaryColor),
+                      const CircularProgressIndicator(
+                        color: AppColors.mainGradientStart,
+                      ),
+
                       const SizedBox(height: 16),
                       Text(
                         "Menyimpan Perubahan...",
@@ -771,16 +762,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE0B0AF)),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE0B0AF)),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: primaryColor, width: 2),
+              borderSide: const BorderSide(
+                color: AppColors.mainGradientStart,
+                width: 2,
+              ),
             ),
+
           ),
         ),
       ],
@@ -817,16 +812,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainGradientStart,
+              ),
               onPressed: () {
-                Navigator.pop(context); // Tutup Dialog Konfirmasi
-                _saveProfile(); // Jalankan Simpan
+                Navigator.pop(context);
+                _saveProfile();
               },
               child: Text(
                 'Simpan',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                style: AppTextStyles.button2.copyWith(
                   color: Colors.white,
-                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
