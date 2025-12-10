@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/gradient_widgets.dart';
+import '../../data/models/booking.dart';
 
 class ClassReservationPage extends StatefulWidget {
   const ClassReservationPage({super.key});
@@ -24,6 +25,16 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
 
   final String _reasonClass = 'Kelas Pengganti/Tambahan Mata Kuliah';
   final String _reasonOrg = 'Agenda Organisasi';
+
+  DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
+  return DateTime(
+    date.year,
+    date.month,
+    date.day,
+    time.hour,
+    time.minute,
+  );
+}
 
   // ----- state -----
   DateTime? _selectedDate;
@@ -151,55 +162,108 @@ class _ClassReservationPageState extends State<ClassReservationPage> {
 
   // ====== DIALOG FLOW ======
   Future<void> _onSubmit() async {
-    // validasi wajib isi
-    final errorMessage = _validateForm();
-    if (errorMessage != null) {
-      await _showInfoDialog(
-        title: 'Data Belum Lengkap',
-        message: errorMessage,
-      );
-      return;
-    }
-
-    final confirmed = await _showConfirmDialog(
-      title: 'Ajukan Peminjaman?',
-      message:
-          'Pastikan data reservasi sudah benar. Apakah Anda yakin ingin '
-          'mengajukan peminjaman kelas?',
-      confirmLabel: 'Ya, Ajukan',
-    );
-    if (confirmed != true) return;
-
-
-    // ====== DI SINI NANTI PANGGIL BACKEND ======
-    // Misalnya:
-    // await ClassReservationService.instance.createReservation(
-    //   date: _selectedDate!,
-    //   startTime: _startTime!,
-    //   endTime: _endTime!,
-    //   room: _selectedRoom!,
-    //   reason: _selectedReason!,
-    //   course: _selectedCourse,
-    //   orgName: _orgNameController.text,
-    //   eventName: _eventNameController.text,
-    //   attachment: _letterFile,
-    // );
-    //
-    // Backend akan menyimpan data dengan status "pending".
-    // Halaman Tinjau Peminjaman admin tinggal membaca semua booking
-    // dengan status = "pending" dari backend.
-
+  // 1. Validasi
+  final errorMessage = _validateForm();
+  if (errorMessage != null) {
     await _showInfoDialog(
-      title: 'Berhasil',
-      message: 'Peminjaman kelas berhasil diajukan.',
+      title: 'Data Belum Lengkap',
+      message: errorMessage,
     );
-
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(
-      context,
-      '/main_classroom',
-    );
+    return;
   }
+
+  // 2. Konfirmasi
+  final confirmed = await _showConfirmDialog(
+    title: 'Ajukan Peminjaman?',
+    message:
+        'Pastikan data reservasi sudah benar. Apakah Anda yakin ingin '
+        'mengajukan peminjaman kelas?',
+    confirmLabel: 'Ya, Ajukan',
+  );
+  if (confirmed != true) return;
+
+  // 3. Siapkan data tanggal & waktu
+  final date = _selectedDate!;
+  final startDate = _combineDateAndTime(date, _startTime!);
+  final endDate = _combineDateAndTime(date, _endTime!);
+
+  // 4. Ambil info user dari sistem login (contoh: RouteGuard / AuthService)
+  // TODO: ganti dengan implementasi real prof
+  final String? currentUserId = 'user001';        // misal dari FirebaseAuth.uid
+  final String? currentUserName = 'Nadia Rauf';   // misal dari profile user
+  final String? currentDepartment = 'Teknik Informatika';
+  final String? currentClassName = 'TI 2023 A';
+
+  // 5. Tentukan tipe purpose
+  String purposeCode;
+  if (_selectedReason == _reasonClass) {
+    purposeCode = 'class_replacement';  // kelas pengganti/tambahan
+  } else if (_selectedReason == _reasonOrg) {
+    purposeCode = 'organization_event';
+  } else {
+    purposeCode = 'other';
+  }
+
+  // 6. (Opsional) upload file ke Firebase Storage, dapatkan URL
+  // String? attachmentUrl;
+  // if (_selectedReason == _reasonOrg && _letterFile != null) {
+  //   attachmentUrl = await UploadService.uploadLetterFile(_letterFile!);
+  // }
+
+  // 7. Bangun objek Booking
+  final now = DateTime.now();
+  final newBooking = Booking(
+    id: '',                // biarkan kosong → akan diisi di service (doc.id)
+    userId: currentUserId,
+    name: currentUserName,
+    facilityId: null,      // karena ini reservasi kelas
+    roomId: _selectedRoom, // IMPORTANT: pastikan ini ID ruangan yang sama dengan Room model
+    startDate: startDate,
+    endDate: endDate,
+    status: 'pending',
+    purpose: purposeCode,
+    quantity: 1,
+    createdAt: now,
+    updatedAt: now,
+    className: currentClassName,                // dari profil user
+    courseName: _selectedReason == _reasonClass
+        ? _selectedCourse
+        : null,
+    department: currentDepartment,
+    organizationName: _selectedReason == _reasonOrg
+        ? _orgNameController.text.trim()
+        : null,
+    eventName: _selectedReason == _reasonOrg
+        ? _eventNameController.text.trim()
+        : null,
+    attachmentPath: null, // ganti dengan attachmentUrl kalau sudah ada upload
+    rejectedBy: null,
+    rejectedReason: null,
+    actualReturnTime: null, // bukan fasilitas → null
+  );
+
+  // 8. Kirim ke backend (nanti ke Firebase)
+  // Contoh pseudo-code:
+  //
+  // await BookingRepository.instance.createClassBooking(newBooking);
+  //
+  // di dalamnya kira-kira:
+  //   final doc = bookingsCollection.doc();
+  //   final bookingWithId = newBooking.copyWith(id: doc.id);
+  //   await doc.set(bookingWithId.toMap());
+
+  await _showInfoDialog(
+    title: 'Berhasil',
+    message: 'Peminjaman kelas berhasil diajukan.',
+  );
+
+  if (!mounted) return;
+  Navigator.pushReplacementNamed(
+    context,
+    '/main_classroom',
+  );
+}
+
 
   Future<void> _onCancel() async {
     final confirmed = await _showConfirmDialog(
