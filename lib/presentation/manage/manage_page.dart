@@ -49,14 +49,14 @@ class ManagePage extends StatelessWidget {
                   Expanded(
                     child: _SummaryCard(
                       label: 'Total Kelas',
-                      value: '60', // dummy, nanti dari backend
+                      value: '70', // dummy, nanti dari backend
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _SummaryCard(
                       label: 'Total Fasilitas',
-                      value: '125', // dummy, nanti dari backend
+                      value: '18', // dummy, nanti dari backend
                     ),
                   ),
                 ],
