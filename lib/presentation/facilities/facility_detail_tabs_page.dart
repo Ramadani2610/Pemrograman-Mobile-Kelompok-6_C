@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:spareapp_unhas/core/constants/app_colors.dart';
 import 'package:spareapp_unhas/core/constants/app_text_styles.dart';
+import 'package:spareapp_unhas/data/models/facility_item_model.dart';
 
 class FacilityDetailTabsPage extends StatefulWidget {
   final String facilityName;
+  final String imagePath;
+  final List<FacilityItem> items;
 
   const FacilityDetailTabsPage({
     super.key,
     required this.facilityName,
+    required this.imagePath,
+    required this.items,
   });
 
   @override
@@ -61,7 +66,7 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
               tabs: const [
                 Tab(text: 'Tersedia'),
                 Tab(text: 'Dipinjam'),
-                Tab(text: 'Lainnya'),
+                Tab(text: 'Rusak'),
               ],
             ),
           ),
@@ -81,79 +86,34 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
         child: TabBarView(
           controller: _tabController,
           children: [
-            _buildAvailableTab(),
-            _buildBorrowedTab(),
-            _buildOtherTab(),
+            _buildTab('Tersedia'),
+            _buildTab('Dipinjam'),
+            _buildTab('Rusak'),
           ],
         ),
       ),
     );
   }
 
-  // ================== TABS ==================
+  Widget _buildTab(String status) {
+    // Filter items berdasarkan status
+    final filteredItems = widget.items
+        .where((item) => item.status == status)
+        .toList();
 
-  Widget _buildAvailableTab() {
-    final items = ['A1', 'A2', 'A3', 'A5', 'A6'];
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: items.length,
+      itemCount: filteredItems.length,
       itemBuilder: (context, index) {
-        return _buildItemCard(
-          items[index],
-          'Tersedia',
-          '15/04/2005',
-          'Isab wira',
-          showEditButton: false,
-        );
+        final item = filteredItems[index];
+        return _buildItemCard(item);
       },
     );
   }
 
-  Widget _buildBorrowedTab() {
-    final items = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        return _buildItemCard(
-          items[index],
-          'Dipinjam',
-          '15/04/2005',
-          'Isab wira',
-          showEditButton: true,
-        );
-      },
-    );
-  }
-
-  Widget _buildOtherTab() {
-    final items = ['R1', 'R2', 'R3', 'R4', 'R5'];
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        return _buildItemCard(
-          items[index],
-          'Rusak',
-          '15/04/2005',
-          '-',
-          showEditButton: false,
-        );
-      },
-    );
-  }
-
-  // ================== CARD ==================
-
-  Widget _buildItemCard(
-    String code,
-    String status,
-    String entryDate,
-    String lastBorrowed, {
-    required bool showEditButton,
-  }) {
-    final statusColor = _getStatusColor(status);
-
+  Widget _buildItemCard(FacilityItem item) {
+    final statusColor = _getStatusColor(item.status);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -173,21 +133,32 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Kode Item
+            // Gambar Fasilitas
             Container(
-              width: 52,
-              height: 52,
+              width: 70,
+              height: 70,
               decoration: BoxDecoration(
-                gradient: AppColors.mainGradient,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.border,
+                  width: 1,
+                ),
               ),
-              child: Center(
-                child: Text(
-                  code,
-                  style: AppTextStyles.body1.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  widget.imagePath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: AppColors.backgroundColor,
+                      child: Icon(
+                        Icons.image,
+                        size: 30,
+                        color: AppColors.secondaryText,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -199,23 +170,37 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$code ${widget.facilityName}',
+                    '${item.code} ${widget.facilityName}',
                     style: AppTextStyles.body1.copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppColors.titleText,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    'Status: $status',
-                    style: AppTextStyles.body2.copyWith(
-                      color: statusColor,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Status: ${item.status}',
+                        style: AppTextStyles.body2.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (item.status == 'Dipinjam' && item.lastBorrowed != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Text(
+                            'oleh ${item.lastBorrowed!}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.secondaryText,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Masuk: $entryDate',
+                    'Masuk: ${item.entryDate}',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.secondaryText,
                     ),
@@ -224,45 +209,45 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
               ),
             ),
 
-            // Kolom kanan (untuk yang dipinjam)
-            if (showEditButton)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    lastBorrowed,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton(
-                    onPressed: () => _showEditDialog(
-                      '$code ${widget.facilityName}',
-                      entryDate,
-                      lastBorrowed,
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: AppColors.mainGradientStart,
-                        width: 1.2,
-                      ),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
+            // Tombol Edit untuk SEMUA status
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (item.status == 'Dipinjam' && item.lastBorrowed != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
                     child: Text(
-                      'Edit',
+                      'Dipinjam oleh\n${item.lastBorrowed!}',
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.mainGradientStart,
-                        fontWeight: FontWeight.w600,
+                        color: AppColors.secondaryText,
+                        fontSize: 10,
                       ),
+                      textAlign: TextAlign.right,
                     ),
                   ),
-                ],
-              ),
+                OutlinedButton(
+                  onPressed: () => _showEditDialog(item),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: AppColors.mainGradientStart,
+                      width: 1.2,
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(
+                    'Edit',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.mainGradientStart,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -282,9 +267,14 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
     }
   }
 
-  // ================== EDIT DIALOG ==================
+  void _showEditDialog(FacilityItem item) {
+    final nameController = TextEditingController(
+        text: '${item.code} ${widget.facilityName}');
+    final entryDateController = TextEditingController(text: item.entryDate);
+    final descriptionController = TextEditingController(text: item.description);
+    final lastBorrowedController =
+        TextEditingController(text: item.lastBorrowed ?? '');
 
-  void _showEditDialog(String name, String entryDate, String lastBorrowed) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -299,7 +289,7 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
-                initialValue: name,
+                controller: nameController,
                 decoration: InputDecoration(
                   labelText: 'Nama Fasilitas',
                   labelStyle: AppTextStyles.caption,
@@ -310,7 +300,7 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
               ),
               const SizedBox(height: 12),
               TextFormField(
-                initialValue: entryDate,
+                controller: entryDateController,
                 decoration: InputDecoration(
                   labelText: 'Tanggal Masuk',
                   labelStyle: AppTextStyles.caption,
@@ -320,23 +310,44 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
                 ),
               ),
               const SizedBox(height: 12),
+              if (item.status == 'Dipinjam')
+                TextFormField(
+                  controller: lastBorrowedController,
+                  decoration: InputDecoration(
+                    labelText: 'Dipinjam Oleh',
+                    labelStyle: AppTextStyles.caption,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              if (item.status == 'Dipinjam') const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: item.status,
+                decoration: InputDecoration(
+                  labelText: 'Status',
+                  labelStyle: AppTextStyles.caption,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                items: ['Tersedia', 'Dipinjam', 'Rusak']
+                    .map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        ))
+                    .toList(),
+                onChanged: (value) {},
+              ),
+              const SizedBox(height: 12),
               TextFormField(
+                controller: descriptionController,
                 maxLines: 3,
                 decoration: InputDecoration(
                   labelText: 'Deskripsi',
                   labelStyle: AppTextStyles.caption,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Terakhir dipinjam: $lastBorrowed',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.secondaryText,
                   ),
                 ),
               ),
@@ -362,6 +373,10 @@ class _FacilityDetailTabsPageState extends State<FacilityDetailTabsPage>
               ),
             ),
             onPressed: () {
+              // Simpan perubahan
+              setState(() {
+                // Update data item
+              });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
