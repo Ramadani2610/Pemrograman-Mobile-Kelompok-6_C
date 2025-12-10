@@ -67,9 +67,8 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "lib/assets/icons/Logo-Resmi-Unhas-1.png"
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "lib/assets/icons/Logo-Resmi-Unhas-1.png"
+  image_path: "lib/assets/icons/logo.png"
+  adaptive_icon_foreground: "lib/assets/icons/logo.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -85,6 +84,7 @@ flutter:
   assets:
     - lib/assets/fonts/
     - lib/assets/icons/
+    - lib/assets/pictures/
     - lib/assets/calendar_events.json
 
   fonts:
@@ -133,3 +133,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
