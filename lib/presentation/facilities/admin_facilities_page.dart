@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spareapp_unhas/core/constants/app_colors.dart';
 import 'package:spareapp_unhas/core/constants/app_text_styles.dart';
-
+import 'package:spareapp_unhas/data/models/facility_item_model.dart';
 import 'package:spareapp_unhas/presentation/facilities/facility_detail_tabs_page.dart';
 import 'package:spareapp_unhas/presentation/facilities/admin_add_facility_dialog.dart';
 
@@ -54,6 +54,45 @@ class AdminFacilitiesPage extends StatelessWidget {
     },
   ];
 
+  // Fungsi untuk generate data dummy item berdasarkan fasilitas
+  List<FacilityItem> _generateDummyItems(
+      String facilityName, int available, int borrowed, int broken) {
+    List<FacilityItem> items = [];
+    
+    // Generate item Tersedia
+    for (int i = 1; i <= available; i++) {
+      items.add(FacilityItem(
+        code: '${facilityName.substring(0, 1).toUpperCase()}$i',
+        status: 'Tersedia',
+        entryDate: '15/04/2005',
+        description: '$facilityName dalam kondisi baik',
+      ));
+    }
+    
+    // Generate item Dipinjam
+    for (int i = available + 1; i <= available + borrowed; i++) {
+      items.add(FacilityItem(
+        code: '${facilityName.substring(0, 1).toUpperCase()}$i',
+        status: 'Dipinjam',
+        entryDate: '15/04/2005',
+        lastBorrowed: 'Isab wira',
+        description: '$facilityName sedang dipinjam',
+      ));
+    }
+    
+    // Generate item Rusak
+    for (int i = available + borrowed + 1; i <= available + borrowed + broken; i++) {
+      items.add(FacilityItem(
+        code: '${facilityName.substring(0, 1).toUpperCase()}$i',
+        status: 'Rusak',
+        entryDate: '15/04/2005',
+        description: '$facilityName butuh perbaikan',
+      ));
+    }
+    
+    return items;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,7 +115,7 @@ class AdminFacilitiesPage extends StatelessWidget {
               Icons.add,
               color: AppColors.mainGradientStart,
             ),
-            onPressed: () =>  AdminAddFacilityPage.navigate(context),
+            onPressed: () => AdminAddFacilityPage.navigate(context),
           ),
         ],
       ),
@@ -150,11 +189,17 @@ class AdminFacilitiesPage extends StatelessWidget {
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () {
+                    // Generate data dummy items
+                    final items = _generateDummyItems(
+                      name, available, borrowed, broken);
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => FacilityDetailTabsPage(
                           facilityName: name,
+                          imagePath: imagePath,
+                          items: items,
                         ),
                       ),
                     );
@@ -200,7 +245,7 @@ class AdminFacilitiesPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.border,
+                      color: AppColors.cardBorder,
                       width: 1,
                     ),
                   ),
