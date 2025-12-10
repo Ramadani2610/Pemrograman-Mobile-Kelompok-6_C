@@ -1,29 +1,46 @@
+// lib/data/models/booking.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Booking {
+  // ====== IDENTITAS PEMINJAMAN ======
   final String id;
   final String? userId;
   final String? name;
+
+  // ====== TARGET ======
   final String? facilityId;
   final String? roomId;
+
+  // ====== WAKTU ======
   final DateTime startDate;
   final DateTime endDate;
-  final String status;
-  final String? purpose;
+  final DateTime? actualReturnTime; // khusus fasilitas
+
+  // ====== STATUS & META ======
+  final String status;    // pending / approved / returned / rejected
+  final String? purpose;  // "kelas_pengganti" / "agenda_organisasi" / "peminjaman_fasilitas"
   final int quantity;
+
   final DateTime createdAt;
   final DateTime updatedAt;
-  final DateTime? actualReturnTime; // <- boleh null
 
-  // --- Info akademik tambahan ---
-  final String? className;    // contoh: "TI 2023 A"
-  final String? courseName;   // contoh: "Pemrograman Mobile C"
-  final String? department;   // contoh: "Teknik Informatika"
+  // ====== INFO AKADEMIK ======
+  final String? className;
+  final String? courseName;
+  final String? department;
 
-  // --- Info penolakan ---
-  final String? rejectedBy;      // id admin yang menolak
-  final String? rejectedReason;  // alasan ditolak
+  // ====== AGENDA ORGANISASI ======
+  final String? organizationName;
+  final String? eventName;
+  final String? attachmentPath;
 
-  // constructor TIDAK perlu const
-  Booking({
+  // ====== PENOLAKAN ======
+  final String? rejectedBy;
+  final String? rejectedReason;
+
+  final String? returnedBy;
+
+  const Booking({
     required this.id,
     this.userId,
     this.name,
@@ -31,95 +48,144 @@ class Booking {
     this.roomId,
     required this.startDate,
     required this.endDate,
+    this.actualReturnTime,
     this.status = 'pending',
     this.purpose,
     this.quantity = 1,
     DateTime? createdAt,
     DateTime? updatedAt,
-    this.actualReturnTime,
     this.className,
     this.courseName,
     this.department,
+    this.organizationName,
+    this.eventName,
+    this.attachmentPath,
+    this.returnedBy,
     this.rejectedBy,
     this.rejectedReason,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? (createdAt ?? DateTime.now());
+  })  : createdAt = createdAt ?? startDate,
+        updatedAt = updatedAt ?? (createdAt ?? startDate);
 
-  factory Booking.fromMap(Map<String, dynamic> map) {
+  // ====== HELPER PARSE TANGGAL FLEXIBLE (Timestamp / DateTime / String) ======
+  static DateTime? _parseNullableDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is Timestamp) return value.toDate();
+    return DateTime.parse(value as String);
+  }
+
+  static DateTime _parseRequiredDate(dynamic value, String fieldName) {
+    final result = _parseNullableDate(value);
+    if (result == null) {
+      throw ArgumentError('Field "$fieldName" tidak boleh null');
+    }
+    return result;
+  }
+
+  // ====== FROM MAP (bisa dipakai untuk Firestore map) ======
+  factory Booking.fromMap(Map<String, dynamic> map, {String? id}) {
     return Booking(
-      id: map['id'] as String? ?? '',
+      id: id ?? (map['id'] as String? ?? ''),
       userId: map['userId'] as String?,
       name: map['name'] as String?,
       facilityId: map['facilityId'] as String?,
       roomId: map['roomId'] as String?,
-      startDate: DateTime.parse(map['startDate'] as String),
-      endDate: DateTime.parse(map['endDate'] as String),
+      startDate: _parseRequiredDate(map['startDate'], 'startDate'),
+      endDate: _parseRequiredDate(map['endDate'], 'endDate'),
+      actualReturnTime: _parseNullableDate(map['actualReturnTime']),
       status: map['status'] as String? ?? 'pending',
       purpose: map['purpose'] as String?,
-      quantity: map['quantity'] as int? ?? 1,
-      createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt'] as String)
-          : null,
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.parse(map['updatedAt'] as String)
-          : null,
+      quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+      createdAt:
+          _parseNullableDate(map['createdAt']) ??
+          _parseRequiredDate(map['startDate'], 'startDate'),
+      updatedAt:
+          _parseNullableDate(map['updatedAt']) ??
+          _parseNullableDate(map['createdAt']) ??
+          _parseRequiredDate(map['startDate'], 'startDate'),
       className: map['className'] as String?,
       courseName: map['courseName'] as String?,
       department: map['department'] as String?,
+      organizationName: map['organizationName'] as String?,
+      eventName: map['eventName'] as String?,
+      attachmentPath: map['attachmentPath'] as String?,
+      returnedBy: map['returnedBy'] as String?,
       rejectedBy: map['rejectedBy'] as String?,
       rejectedReason: map['rejectedReason'] as String?,
-      actualReturnTime: map['actualReturnTime'] != null
-          ? DateTime.parse(map['actualReturnTime'] as String)
-          : null,
     );
   }
 
+  // Opsional: langsung dari DocumentSnapshot
+  factory Booking.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? {};
+    return Booking.fromMap(data, id: doc.id);
+  }
+
+  // ====== TO MAP (siap dikirim ke Firestore) ======
   Map<String, dynamic> toMap() {
     return {
+      // `id` biasanya diambil dari doc.id, tapi tetap boleh disimpan
       'id': id,
       'userId': userId,
       'name': name,
       'facilityId': facilityId,
       'roomId': roomId,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
+      'startDate': startDate,              // DateTime → Timestamp oleh plugin
+      'endDate': endDate,
+      'actualReturnTime': actualReturnTime,
       'status': status,
       'purpose': purpose,
       'quantity': quantity,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
       'className': className,
       'courseName': courseName,
       'department': department,
+      'organizationName': organizationName,
+      'eventName': eventName,
+      'attachmentPath': attachmentPath,
+      'returnedBy': returnedBy,
       'rejectedBy': rejectedBy,
       'rejectedReason': rejectedReason,
-      'actualReturnTime': actualReturnTime?.toIso8601String(),
     };
   }
 
+  // ====== COPY WITH ======
   Booking copyWith({
-    String? status,
+    String? id,
+    String? userId,
+    String? name,
+    String? facilityId,
+    String? roomId,
     DateTime? startDate,
     DateTime? endDate,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? actualReturnTime,
+    String? status,
     String? purpose,
     int? quantity,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     String? className,
     String? courseName,
     String? department,
+    String? organizationName,
+    String? eventName,
+    String? attachmentPath,
+    String? returnedBy,
     String? rejectedBy,
     String? rejectedReason,
-    DateTime? actualReturnTime,
   }) {
     return Booking(
-      id: id,
-      userId: userId,
-      name: name,
-      facilityId: facilityId,
-      roomId: roomId,
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      facilityId: facilityId ?? this.facilityId,
+      roomId: roomId ?? this.roomId,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      actualReturnTime: actualReturnTime ?? this.actualReturnTime,
       status: status ?? this.status,
       purpose: purpose ?? this.purpose,
       quantity: quantity ?? this.quantity,
@@ -128,9 +194,12 @@ class Booking {
       className: className ?? this.className,
       courseName: courseName ?? this.courseName,
       department: department ?? this.department,
+      organizationName: organizationName ?? this.organizationName,
+      eventName: eventName ?? this.eventName,
+      attachmentPath: attachmentPath ?? this.attachmentPath,
+      returnedBy: returnedBy ?? this.returnedBy,
       rejectedBy: rejectedBy ?? this.rejectedBy,
       rejectedReason: rejectedReason ?? this.rejectedReason,
-      actualReturnTime: actualReturnTime ?? this.actualReturnTime,
     );
   }
 }
