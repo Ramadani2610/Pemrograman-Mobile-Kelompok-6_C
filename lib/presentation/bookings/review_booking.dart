@@ -11,6 +11,7 @@ import '../../data/models/facility.dart';
 import '../../data/services/mock_booking_service.dart';
 import '../../data/services/mock_room_service.dart';
 import '../../data/services/mock_facility_service.dart';
+import '../../core/widgets/app_dialogs.dart';
 
 class ReviewBookingsPage extends StatefulWidget {
   const ReviewBookingsPage({super.key});
@@ -123,7 +124,8 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
   // ========= AKSI STATUS =========
 
   Future<void> _approveBooking(Booking booking) async {
-    final confirmed = await _showConfirmDialog(
+    final confirmed = await showAppConfirmDialog(
+      context,
       title: 'Terima Peminjaman?',
       message:
           'Peminjaman ini akan dipindahkan ke status "Sedang Digunakan". Pastikan data sudah benar.',
@@ -214,7 +216,8 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     }
 
     // 2) Konfirmasi
-    final confirmed = await _showConfirmDialog(
+    final confirmed = await showAppConfirmDialog(
+      context,
       title: 'Tolak Peminjaman?',
       message:
           'Peminjaman akan ditolak dengan alasan berikut:\n\n"$reason"\n\n'
@@ -296,7 +299,8 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
 
 
   Future<void> _markAsReturned(Booking booking) async {
-    final confirmed = await _showConfirmDialog(
+    final confirmed = await showAppConfirmDialog(
+      context,
       title: 'Tandai Selesai?',
       message:
           'Pastikan ruangan/fasilitas sudah benar-benar dikembalikan. Status akan diubah menjadi "Selesai".',
@@ -333,7 +337,8 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
     final formattedTime = _timeFormatter.format(returnedAt);
 
     // 2. Konfirmasi dengan menampilkan waktu pengembalian
-    final confirmed = await _showConfirmDialog(
+    final confirmed = await showAppConfirmDialog(
+      context,
       title: 'Tandai Selesai (Fasilitas)?',
       message:
           'Fasilitas akan ditandai sudah dikembalikan pada pukul $formattedTime.\n'
@@ -366,53 +371,7 @@ class _ReviewBookingsPageState extends State<ReviewBookingsPage> {
 
 
 
-  // ========= DIALOG & SNACKBAR =========
-
-  Future<bool?> _showConfirmDialog({
-    required String title,
-    required String message,
-    required String confirmLabel,
-  }) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            title,
-            style: AppTextStyles.heading3,
-          ),
-          content: Text(
-            message,
-            style: AppTextStyles.body2,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'Tidak',
-                style: AppTextStyles.button2.copyWith(
-                  color: AppColors.secondaryText,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                confirmLabel,
-                style: AppTextStyles.button2.copyWith(
-                  color: AppColors.mainGradientStart,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // ========= SNACKBAR =========
 
   void _showSnack(String message, {bool isError = false}) {
     if (!mounted) return;
