@@ -12,6 +12,10 @@ class CustomTextField extends StatefulWidget {
   /// kalau tidak null → tampil border merah + text error
   final String? errorText;
 
+  // --- PERBAIKAN: Tambahkan parameter autofillHints ---
+  final Iterable<String>? autofillHints;
+  // ---------------------------------------------------
+
   const CustomTextField({
     super.key,
     required this.controller,
@@ -20,6 +24,7 @@ class CustomTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.prefixIcon,
     this.errorText,
+    this.autofillHints, // <-- Tambahkan ke konstruktor
   });
 
   @override
@@ -87,6 +92,11 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 obscureText: isPasswordField ? _obscurePassword : false,
                 keyboardType: widget.keyboardType,
                 style: AppTextStyles.body1,
+
+                // --- PERBAIKAN: Meneruskan autofillHints ---
+                autofillHints: widget.autofillHints,
+
+                // ------------------------------------------
                 decoration: InputDecoration(
                   labelText: widget.label,
                   labelStyle: AppTextStyles.body2,
