@@ -100,7 +100,7 @@ class AdminFacilitiesPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         title: Text(
           'Kelola Fasilitas',
           style: AppTextStyles.heading2.copyWith(

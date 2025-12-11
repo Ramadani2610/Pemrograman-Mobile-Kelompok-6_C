@@ -6,41 +6,19 @@ import '../../core/widgets/custom_textfield.dart';
 import 'package:spareapp_unhas/data/services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
-  // <-- Diubah menjadi StatefulWidget
   const ForgotPasswordPage({super.key});
 
   @override
   State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-/// Clipper yang sama seperti di halaman Login untuk membentuk curve merah
-class _HeaderClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 80);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height,
-      size.width,
-      size.height - 80,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-// ====================================================================
-// STATE BARU (LOGIKA)
-// ====================================================================
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController emailController = TextEditingController();
   final AuthService _authService = AuthService();
-  bool _isLoading = false; // Status loading untuk tombol
+  bool _isLoading = false; 
+
+  // Warna Merah Spesifik sesuai Gambar
+  final Color _brandRed = const Color(0xFFD32F2F); 
 
   @override
   void dispose() {
@@ -71,28 +49,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       await _authService.sendPasswordResetEmail(email);
 
       if (mounted) {
-        // Tampilkan Dialog Sukses
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Email Terkirim"),
-            content: Text(
-              "Link reset password telah dikirim ke $email.\n\nSilakan cek kotak masuk (Inbox) atau Spam Anda.",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Tutup dialog
-                  // Kita tidak menutup halaman agar user bisa "Kirim Ulang"
-                },
-                child: const Text(
-                  "OK",
-                  style: TextStyle(color: AppColors.mainGradientStart),
-                ),
-              ),
-            ],
-          ),
-        );
+        // Tampilkan Dialog Sukses Sesuai Desain Gambar
+        _showImageStyleDialog(email);
       }
     } catch (e) {
       if (mounted) {
@@ -110,6 +68,145 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // --- IMPLEMENTASI DIALOG SESUAI GAMBAR ---
+  void _showImageStyleDialog(String email) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          backgroundColor: Colors.white,
+          elevation: 5,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Ikon Amplop dalam Lingkaran Pink Lembut
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: _brandRed.withOpacity(0.08), // Pink sangat muda
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.mark_email_unread_outlined,
+                    size: 48,
+                    color: _brandRed,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 2. Judul "Cek Email Anda!"
+                Text(
+                  'Cek Email Anda!',
+                  style: AppTextStyles.heading1.copyWith(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+
+                // 3. Deskripsi
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: AppTextStyles.body2.copyWith(
+                      color: AppColors.secondaryText, // Abu-abu
+                      height: 1.5,
+                      fontSize: 13,
+                    ),
+                    children: [
+                      const TextSpan(text: 'Kami telah mengirimkan instruksi reset password ke:\n'),
+                      TextSpan(
+                        text: email,
+                        style: AppTextStyles.body2.copyWith(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // 4. Tombol OKE (Merah Solid)
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup dialog
+                      Navigator.pop(context); // Kembali ke halaman sebelumnya
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _brandRed, // Merah Solid sesuai gambar
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30), // Rounded penuh
+                      ),
+                    ),
+                    child: const Text(
+                      'OKE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // 5. Teks "Belum menerima email?"
+                Text(
+                  "Belum menerima email?",
+                  style: AppTextStyles.body2.copyWith(
+                    color: AppColors.secondaryText,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // 6. Tombol "Kirim Ulang" (Outline Merah)
+                SizedBox(
+                  height: 45,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Tutup dialog
+                      _handleResetPassword(); // Kirim ulang
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: _brandRed, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                    ),
+                    child: Text(
+                      "Kirim Ulang",
+                      style: TextStyle(
+                        color: _brandRed,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -243,7 +340,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ),
                           const SizedBox(height: 8),
 
-                          // Input Email (pakai CustomTextField)
+                          // Input Email
                           CustomTextField(
                             controller: emailController,
                             label: 'Masukkan email UNHAS Anda',
@@ -253,7 +350,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                           const SizedBox(height: 28),
 
-                          // Tombol Send Email: gradient seperti login, tapi label "Send Email"
+                          // Tombol Send Email
                           SizedBox(
                             width: double.infinity,
                             height: 50,
@@ -263,14 +360,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 borderRadius: BorderRadius.circular(25),
                               ),
                               child: ElevatedButton(
-                                // Panggil fungsi reset
                                 onPressed: _isLoading
                                     ? null
                                     : _handleResetPassword,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   shadowColor: Colors.transparent,
-                                  // Menonaktifkan tombol jika loading
                                   disabledBackgroundColor: Colors.grey,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(25),
@@ -297,34 +392,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                           const SizedBox(height: 24),
 
-                          // Text Kirim Ulang
+                          // Text Kirim Ulang (Menggunakan TextSpan biasa karena tombol ada di dialog)
                           Center(
                             child: RichText(
                               text: TextSpan(
                                 style: AppTextStyles.body2.copyWith(
                                   color: AppColors.secondaryText,
                                 ),
-                                children: [
-                                  const TextSpan(
+                                children: const [
+                                  TextSpan(
                                     text: "Tidak menerima email? ",
                                   ),
-                                  WidgetSpan(
-                                    alignment: PlaceholderAlignment.baseline,
-                                    baseline: TextBaseline.alphabetic,
-                                    child: GestureDetector(
-                                      // Logika Kirim Ulang (Sama dengan Kirim Email)
-                                      onTap: _isLoading
-                                          ? null
-                                          : _handleResetPassword,
-                                      child: Text(
-                                        'Kirim ulang!',
-                                        style: AppTextStyles.body2.copyWith(
-                                          color: AppColors.mainGradientStart,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  // Kita hapus tombol klik di sini karena sudah ada di Dialog
+                                  // agar user fokus klik tombol Kirim Email dulu
                                 ],
                               ),
                             ),
@@ -343,4 +423,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ),
     );
   }
+}
+
+// Clipper untuk Background Merah (Tetap sama)
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 80);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height,
+      size.width,
+      size.height - 80,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
