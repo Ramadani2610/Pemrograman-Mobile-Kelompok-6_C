@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:spareapp_unhas/data/services/route_guard.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart'; // Import ini untuk Autofill
 
 // --- TAMBAHAN IMPORT BARU ---
 import 'package:spareapp_unhas/data/services/auth_service.dart';
@@ -22,22 +23,15 @@ class _HeaderClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-
-    // mulai dari kiri atas
     path.lineTo(0, size.height - 80);
-
-    // curve ke kanan bawah (melengkung ke bawah di tengah)
     path.quadraticBezierTo(
       size.width / 2,
       size.height,
       size.width,
       size.height - 80,
     );
-
-    // lalu ke kanan atas dan tutup
     path.lineTo(size.width, 0);
     path.close();
-
     return path;
   }
 
@@ -72,18 +66,20 @@ class _LoginPageState extends State<LoginPage> {
       if (remember) {
         final savedUsername = prefs.getString('saved_username') ?? '';
         final savedPassword = prefs.getString('saved_password') ?? '';
-        setState(() {
-          _rememberMe = true;
-          _usernameController.text = savedUsername;
-          _passwordController.text = savedPassword;
-        });
+        if (mounted) {
+          setState(() {
+            _rememberMe = true;
+            _usernameController.text = savedUsername;
+            _passwordController.text = savedPassword;
+          });
+        }
       }
     } catch (e) {
       // ignore errors silently for now
     }
   }
 
-  // ===== BAGIAN YANG DIPERBARUI (LOGIC LOGIN) =====
+  // ===== LOGIC LOGIN DENGAN PERBAIKAN AUTOFILL =====
   void _handleLogin() async {
     // 1. Validasi Input Kosong
     if (_usernameController.text.trim().isEmpty ||
@@ -105,19 +101,22 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // 2. Panggil Service Login Firebase yang Baru
+      // 2. Panggil Service Login Firebase
       final AuthService authService = AuthService();
 
-      // Kita anggap input username adalah NIM
       UserModel user = await authService.loginWithNim(
         nim: _usernameController.text,
         password: _passwordController.text,
       );
 
+      // --- PERBAIKAN AUTOFILL TAMBAHAN ---
+      // Perintah ini WAJIB dipanggil saat login sukses agar HP menawarkan menyimpan password
+      TextInput.finishAutofillContext();
+      // ------------------------------------
+
       // 3. Jika Berhasil: Simpan Session & Credentials
       await _saveOrClearCredentials();
 
-      // Simpan info ke RouteGuard (agar aplikasi tahu siapa yang login)
       await RouteGuard.setUserInfo(username: user.nama, userType: user.role);
 
       if (mounted) {
@@ -125,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
           _isLoading = false;
         });
 
-        // 4. Arahkan Halaman Sesuai Role (Admin / Mahasiswa)
+        // 4. Arahkan Halaman Sesuai Role
         if (user.role == 'admin') {
           Navigator.of(context).pushReplacementNamed('/home');
         } else {
@@ -139,7 +138,6 @@ class _LoginPageState extends State<LoginPage> {
           _isLoading = false;
         });
 
-        // Bersihkan pesan error agar enak dibaca user
         String message = e.toString().replaceAll("Exception: ", "");
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,142 +232,151 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // === TITLE CENTER: Welcome + subtitle ===
-                          Center(
-                            child: Column(
+                      // --- PERBAIKAN: AutofillGroup membungkus kolom input ---
+                      child: AutofillGroup(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // === TITLE CENTER: Welcome + subtitle ===
+                            Center(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Selamat Datang!',
+                                    style: AppTextStyles.heading1,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Silahkan Masuk ke Akun Anda',
+                                    style: AppTextStyles.body2.copyWith(
+                                      color: AppColors.secondaryText,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // Username
+                            Text(
+                              'Username',
+                              style: AppTextStyles.body1.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            CustomTextField(
+                              controller: _usernameController,
+                              label: 'Masukkan Username',
+                              prefixIcon: Icons.person_outline,
+                              autofillHints: const [
+                                AutofillHints.username,
+                              ], // Hint Autofill
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Password
+                            Text(
+                              'Kata Sandi',
+                              style: AppTextStyles.body1.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            CustomTextField(
+                              controller: _passwordController,
+                              label: 'Masukkan kata sandi',
+                              obscureText: true,
+                              prefixIcon: Icons.lock_outline,
+                              autofillHints: const [
+                                AutofillHints.password,
+                              ], // Hint Autofill
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Remember Me
+                            Row(
                               children: [
-                                Text(
-                                  'Selamat Datang!',
-                                  style: AppTextStyles.heading1,
-                                  textAlign: TextAlign.center,
+                                Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: AppColors.mainGradientStart,
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _rememberMe = val ?? false;
+                                    });
+                                  },
                                 ),
-                                const SizedBox(height: 8),
                                 Text(
-                                  'Silahkan Masuk ke Akun Anda',
+                                  'Ingat Saya?',
                                   style: AppTextStyles.body2.copyWith(
                                     color: AppColors.secondaryText,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ),
-                          ),
+                            const SizedBox(height: 24),
 
-                          const SizedBox(height: 30),
-
-                          // Username
-                          Text(
-                            'Username',
-                            style: AppTextStyles.body1.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          CustomTextField(
-                            controller: _usernameController,
-                            label: 'Masukkan Username',
-                            prefixIcon: Icons.person_outline,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Password
-                          Text(
-                            'Kata Sandi',
-                            style: AppTextStyles.body1.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          CustomTextField(
-                            controller: _passwordController,
-                            label: 'Masukkan kata sandi',
-                            obscureText: true,
-                            prefixIcon: Icons.lock_outline,
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Remember Me
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _rememberMe,
-                                activeColor: AppColors.mainGradientStart,
-                                onChanged: (val) {
-                                  setState(() {
-                                    _rememberMe = val ?? false;
-                                  });
-                                },
-                              ),
-                              Text(
-                                'Ingat Saya?',
-                                style: AppTextStyles.body2.copyWith(
-                                  color: AppColors.secondaryText,
+                            // Login Button (gradient)
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: AppColors.mainGradient,
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _handleLogin,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    disabledBackgroundColor: Colors.grey,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(25),
+                                    ),
+                                  ),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(
+                                          'Masuk',
+                                          style: AppTextStyles.button1.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
+                            ),
+                            const SizedBox(height: 20),
 
-                          // Login Button (gradient)
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: AppColors.mainGradient,
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _handleLogin,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.transparent,
-                                  shadowColor: Colors.transparent,
-                                  disabledBackgroundColor: Colors.grey,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
+                            // Forgot Password
+                            Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/forgot_password',
+                                  );
+                                },
+                                child: Text(
+                                  'Lupa Kata Sandi?',
+                                  style: AppTextStyles.body2.copyWith(
+                                    color: AppColors.secondaryText,
                                   ),
                                 ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : Text(
-                                        'Masuk',
-                                        style: AppTextStyles.button1.copyWith(
-                                          color: Colors.white,
-                                        ),
-                                      ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Forgot Password
-                          Center(
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/forgot_password',
-                                );
-                              },
-                              child: Text(
-                                'Lupa Kata Sandi?',
-                                style: AppTextStyles.body2.copyWith(
-                                  color: AppColors.secondaryText,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
