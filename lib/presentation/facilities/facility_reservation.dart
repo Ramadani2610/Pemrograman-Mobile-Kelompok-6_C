@@ -386,6 +386,8 @@ class _FacilityReservationPageState extends State<FacilityReservationPage> {
                       },
                     ),
 
+                    const SizedBox(height: 20),
+
                     // ---------- FASILITAS ----------
                     Text(
                       'Fasilitas yang Dipinjam',

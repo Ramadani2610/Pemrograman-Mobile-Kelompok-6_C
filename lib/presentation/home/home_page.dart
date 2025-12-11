@@ -201,13 +201,6 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
-                        IconButton(
-                          onPressed: () {},
-                          icon: Icon(
-                            Icons.chat_bubble_outline,
-                            color: AppColors.mainGradientStart,
-                          ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -567,29 +560,11 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: (int index) {
-          setState(() => _selectedIndex = index);
-          switch (index) {
-            case 0:
-              Navigator.pushNamed(context, '/home');
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/manage');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/notification');
-              break;
-            case 3:
-              Navigator.pushNamed(context, '/booking_history');
-              break;
-            case 4:
-              Navigator.pushNamed(context, '/profile');
-              break;
-          }
-        },
+      bottomNavigationBar: const BottomNavBar(
+        selectedIndex: 0,
+        useRoleRouting: true,
       ),
+
     );
   }
 

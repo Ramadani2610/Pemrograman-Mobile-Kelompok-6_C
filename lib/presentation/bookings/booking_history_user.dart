@@ -160,28 +160,11 @@ class _BookingHistoryUserPageState extends State<BookingHistoryUserPage> {
       ),
 
       // ------- NAVBAR (tab Riwayat User) -------
-      bottomNavigationBar: BottomNavBar(
+      bottomNavigationBar: const BottomNavBar(
         selectedIndex: 3,
-        onItemTapped: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/home_user');
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/manage_user');
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(context, '/user_notification');
-              break;
-            case 3:
-              // already here
-              break;
-            case 4:
-              Navigator.pushReplacementNamed(context, '/profile');
-              break;
-          }
-        },
+        useRoleRouting: true,
       ),
+
     );
   }
 

@@ -57,7 +57,7 @@ class UserManagePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Halo, Mahasiswa!',
+                            'Halo!',
                             style: AppTextStyles.body1.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
