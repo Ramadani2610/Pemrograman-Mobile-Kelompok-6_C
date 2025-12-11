@@ -847,30 +847,117 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // GANTI FUNGSI LAMA KAMU DENGAN YANG INI
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Anda yakin ingin logout?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // Sudut melengkung
           ),
-          TextButton(
-            onPressed: () async {
-              await AuthService().logout();
+          elevation: 5,
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Agar tinggi dialog menyesuaikan konten
+              children: [
+                // 1. Judul
+                Text(
+                  'Konfirmasi Logout',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                    fontFamily: 'Poppins', // Pastikan font sesuai
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
 
-              if (context.mounted) {
-                Navigator.pop(context);
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
-            },
-            child: const Text('Logout'),
+                // 2. Deskripsi
+                Text(
+                  'Apakah Anda yakin ingin keluar\ndari aplikasi?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // 3. Tombol Aksi (Row: Batal & Keluar)
+                Row(
+                  children: [
+                    // Tombol BATAL (Outline)
+                    Expanded(
+                      child: SizedBox(
+                        height: 45,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey[400]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Batal',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 16), // Jarak antar tombol
+
+                    // Tombol KELUAR (Merah Solid)
+                    Expanded(
+                      child: SizedBox(
+                        height: 45,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            // Tutup Dialog dulu
+                            Navigator.pop(context);
+                            
+                            // Panggil fungsi logout dari AuthService
+                            // Pastikan kamu sudah import auth_service.dart
+                            await AuthService().logout();
+
+                            if (context.mounted) {
+                              Navigator.of(context).pushReplacementNamed('/login');
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD32F2F), // Warna Merah
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Keluar',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
