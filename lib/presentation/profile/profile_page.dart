@@ -101,21 +101,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
                       child: Align(
                         alignment: Alignment.topLeft,
-                        child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
+                        child: Container(),
                       ),
                     ),
                   ),
@@ -204,12 +190,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.mainGradientStart,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+                        backgroundColor: AppColors.mainGradientStart,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 2,
                       ),
-                      elevation: 2,
-                    ),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -264,11 +250,8 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           child: Text(
             value,
-            style: AppTextStyles.body2.copyWith(
-              color: AppColors.titleText,
-            ),
+            style: AppTextStyles.body2.copyWith(color: AppColors.titleText),
           ),
-
         ),
       ],
     );
@@ -467,11 +450,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
         children: [
           // LAYER 1: KONTEN FORMULIR
           _isInitializing
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.mainGradientStart,
-                ),
-              )
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.mainGradientStart,
+                  ),
+                )
               : SingleChildScrollView(
                   child: Column(
                     children: [
@@ -659,12 +642,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               height: 50,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.mainGradientStart,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(25),
+                                  backgroundColor: AppColors.mainGradientStart,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  elevation: 2,
                                 ),
-                                elevation: 2,
-                              ),
                                 onPressed: () {
                                   _showSaveDialog(context);
                                 },
@@ -775,7 +758,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 width: 2,
               ),
             ),
-
           ),
         ),
       ],
