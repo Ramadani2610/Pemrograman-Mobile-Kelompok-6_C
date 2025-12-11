@@ -404,54 +404,6 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-
-                    // Package header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Text(
-                          'Paket Fasilitas',
-                          style: AppTextStyles.body1.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Horizontal scrollable facility cards
-                    SizedBox(
-                      height: 140,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: <Widget>[
-                          _facilityCard(
-                            'Paket Fasilitas',
-                            '15 Terpinjam',
-                            'lib/assets/icons/proyektor.jpg',
-                          ),
-                          _facilityCard(
-                            'Remote Tv',
-                            '5 Terpinjam',
-                            'lib/assets/icons/remote-tv.jpg',
-                          ),
-                          _facilityCard(
-                            'Kabel Terminal',
-                            '4 Terpinjam',
-                            'lib/assets/icons/terminal colokan.jpg',
-                          ),
-                          _facilityCard(
-                            'Spidol',
-                            '2 Terpinjam',
-                            'lib/assets/icons/spidol.jpeg',
-                          ),
-                          _facilityCard(
-                            'Kabel HDMI',
-                            '0 Terpinjam',
-                            'lib/assets/icons/kabel hdmi.jpg',
-                          ),
-                        ],
-                      ),
-                    ),
                     const SizedBox(height: 80),
                   ],
                 ),
@@ -642,73 +594,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-
-  Widget _facilityCard(String title, String subtitle, String imagePath) {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/admin_facilities'),
-      child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: AppColors.mainGradient,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.mainGradientStart.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-              child: Container(
-                height: 80,
-                width: double.infinity,
-                color: Colors.white.withOpacity(0.1),
-                child: Center(
-                  child: Icon(
-                    Icons.devices_other,
-                    size: 40,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body2.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.caption.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

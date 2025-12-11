@@ -5,7 +5,6 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:spareapp_unhas/data/services/route_guard.dart';
 import 'package:spareapp_unhas/data/services/auth_service.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -164,14 +163,11 @@ class _UserHomePageState extends State<UserHomePage> {
                   _buildSimpleHeader(context),
                   _buildUserProfileSection(),
                   _buildCarouselSection(),
-                  _buildStatsSection(),
                   const SizedBox(height: 20),
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 16),
                     child: _buildCalendar(),
                   ),
-                  _buildPopularFacilities(),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -508,239 +504,6 @@ class _UserHomePageState extends State<UserHomePage> {
     );
   }
 
-  Widget _buildStatsSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Statistik Peminjaman',
-            style: AppTextStyles.body1.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.titleText,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildStatCard('15', 'Peminjaman\nAktif', Icons.event_note),
-              const SizedBox(width: 8),
-              _buildStatCard('7', 'Fasilitas\nTersedia', Icons.devices),
-              const SizedBox(width: 8),
-              _buildStatCard(
-                '3',
-                'Menunggu\nKonfirmasi',
-                Icons.schedule,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _buildStatCard(String value, String label, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.cardShadow,
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon bulat dengan gradient (sama gaya dengan komponen lain)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppColors.mainGradient,
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Angka besar
-            Text(
-              value,
-              style: AppTextStyles.heading3.copyWith(
-                color: AppColors.mainGradientStart,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            // Label kecil dua baris
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.secondaryText,
-                height: 1.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  Widget _buildPopularFacilities() {
-    final List<Map<String, dynamic>> facilities = [
-      {
-        'name': 'Ruangan Kelas',
-        'available': '12 Tersedia',
-        'icon': Icons.meeting_room,
-        'color': Colors.blue,
-      },
-      {
-        'name': 'Laboratorium',
-        'available': '8 Tersedia',
-        'icon': Icons.science,
-        'color': Colors.green,
-      },
-      {
-        'name': 'Auditorium',
-        'available': '3 Tersedia',
-        'icon': Icons.theaters,
-        'color': Colors.orange,
-      },
-      {
-        'name': 'Studio Multimedia',
-        'available': '5 Tersedia',
-        'icon': Icons.videocam,
-        'color': Colors.purple,
-      },
-    ];
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Fasilitas Populer',
-                style: TextStyle(
-                  color: Colors.grey[800],
-                  fontSize: 18,
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/facilities'),
-                style: TextButton.styleFrom(foregroundColor: primaryColor),
-                child: const Row(
-                  children: [
-                    Text('Lihat Semua'),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward, size: 16),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 130,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: facilities.length,
-              itemBuilder: (context, index) {
-                final facility = facilities[index];
-                return Container(
-                  width: 160,
-                  margin: EdgeInsets.only(
-                    right: index == facilities.length - 1 ? 0 : 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: facility['color'].withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            facility['icon'],
-                            color: facility['color'],
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          facility['name'],
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          facility['available'],
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildCalendar() {
     final year = _displayMonth.year;
@@ -754,247 +517,149 @@ class _UserHomePageState extends State<UserHomePage> {
     final int rowCount = (totalNeeded / 7).ceil();
     final int itemCount = rowCount * 7;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 8,
       ),
-      child: Column(
-        children: [
-          // Header bulan + navigasi kiri/kanan
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Kalender Akademik',
-                style: AppTextStyles.body1.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      setState(() {
-                        _displayMonth = DateTime(
-                          _displayMonth.year,
-                          _displayMonth.month - 1,
-                          1,
-                        );
-                      });
-                    },
-                    icon: Icon(
-                      Icons.chevron_left,
-                      color: AppColors.mainGradientStart,
-                    ),
-                  ),
-                  Text(
-                    DateFormat.yMMMM().format(_displayMonth),
-                    style: AppTextStyles.body2.copyWith(
-                      color: _displayMonth.year == 2025 &&
-                              _displayMonth.month == 12
-                          ? Colors.red
-                          : AppColors.titleText,
-                    ),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    onPressed: () {
-                      setState(() {
-                        _displayMonth = DateTime(
-                          _displayMonth.year,
-                          _displayMonth.month + 1,
-                          1,
-                        );
-                      });
-                    },
-                    icon: Icon(
-                      Icons.chevron_right,
-                      color: AppColors.mainGradientStart,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        final int dayOffset = index - firstDayIndex;
+        final DateTime cellDate = DateTime(year, month, 1 + dayOffset);
 
-          // Header hari (S S R K J S M)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Expanded(child: Center(child: Text('S'))),
-              Expanded(child: Center(child: Text('S'))),
-              Expanded(child: Center(child: Text('R'))),
-              Expanded(child: Center(child: Text('K'))),
-              Expanded(child: Center(child: Text('J'))),
-              Expanded(child: Center(child: Text('S'))),
-              Expanded(child: Center(child: Text('M'))),
-            ],
-          ),
-          const SizedBox(height: 8),
+        final bool isCurrentMonth =
+            cellDate.year == year && cellDate.month == month;
 
-          // Grid tanggal (stylenya sama dengan HomePage)
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              childAspectRatio: 1,
-              mainAxisSpacing: 6,
-              crossAxisSpacing: 8,
+        final bool isToday =
+            cellDate.year == _now.year &&
+            cellDate.month == _now.month &&
+            cellDate.day == _now.day;
+
+        final DateTime eventKey = DateTime(
+          cellDate.year,
+          cellDate.month,
+          cellDate.day,
+        );
+        final bool hasEvent = _eventsMap.containsKey(eventKey);
+
+        final String dayText = cellDate.day.toString();
+
+        Color textColor;
+        if (isToday) {
+          textColor = Colors.white;
+        } else if (isCurrentMonth) {
+          textColor = AppColors.titleText;
+        } else {
+          textColor = Colors.grey.withOpacity(0.45);
+        }
+
+        return GestureDetector(
+          onTap: () {
+            _removePopup();
+            if (hasEvent) {
+              setState(() {
+                _selectedEventDate = eventKey;
+                _selectedEvent = _eventsMap[eventKey];
+              });
+              _showPopupOverlay(context, eventKey, _eventsMap[eventKey]!);
+            } else {
+              setState(() {
+                _selectedEventDate = null;
+                _selectedEvent = null;
+              });
+            }
+          },
+          child: Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (isToday)
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.mainGradient,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.mainGradientStart.withOpacity(0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        dayText,
+                        style: AppTextStyles.body2.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  )
+                else if (isCurrentMonth)
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.mainGradient,
+                    ),
+                    child: Container(
+                      margin: const EdgeInsets.all(1.8),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: Center(
+                        child: Text(
+                          dayText,
+                          style: AppTextStyles.body2.copyWith(
+                            color: textColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.withOpacity(0.22)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        dayText,
+                        style: AppTextStyles.caption.copyWith(color: textColor),
+                      ),
+                    ),
+                  ),
+
+                if (hasEvent)
+                  Positioned(
+                    bottom: 4,
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.mainGradientStart,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            itemCount: itemCount,
-            itemBuilder: (context, index) {
-              final int dayOffset = index - firstDayIndex;
-              final DateTime cellDate = DateTime(year, month, 1 + dayOffset);
-
-              final bool isCurrentMonth =
-                  cellDate.year == year && cellDate.month == month;
-
-              final bool isToday =
-                  cellDate.year == _now.year &&
-                  cellDate.month == _now.month &&
-                  cellDate.day == _now.day;
-
-              final DateTime eventKey = DateTime(
-                cellDate.year,
-                cellDate.month,
-                cellDate.day,
-              );
-              final bool hasEvent = _eventsMap.containsKey(eventKey);
-
-              final String dayText = cellDate.day.toString();
-
-              Color textColor;
-              if (isToday) {
-                textColor = Colors.white;
-              } else if (isCurrentMonth) {
-                textColor = AppColors.titleText;
-              } else {
-                textColor = Colors.grey.withOpacity(0.45);
-              }
-
-              return GestureDetector(
-                onTap: () {
-                  _removePopup();
-                  if (hasEvent) {
-                    setState(() {
-                      _selectedEventDate = eventKey;
-                      _selectedEvent = _eventsMap[eventKey];
-                    });
-                    _showPopupOverlay(context, eventKey, _eventsMap[eventKey]!);
-                  } else {
-                    setState(() {
-                      _selectedEventDate = null;
-                      _selectedEvent = null;
-                    });
-                  }
-                },
-                child: Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (isToday)
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: AppColors.mainGradient,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.mainGradientStart
-                                    .withOpacity(0.25),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              dayText,
-                              style: AppTextStyles.body2.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        )
-                      else if (isCurrentMonth)
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: AppColors.mainGradient,
-                          ),
-                          child: Container(
-                            margin: const EdgeInsets.all(1.8),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                            ),
-                            child: Center(
-                              child: Text(
-                                dayText,
-                                style: AppTextStyles.body2.copyWith(
-                                  color: textColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.grey.withOpacity(0.22),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              dayText,
-                              style: AppTextStyles.caption.copyWith(
-                                color: textColor,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      if (hasEvent)
-                        Positioned(
-                          bottom: 4,
-                          child: Container(
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.mainGradientStart,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
